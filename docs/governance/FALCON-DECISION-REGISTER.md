@@ -106,3 +106,14 @@
     an ordinary consumer under decision 28 — a read-side capability
     only, not authority to publish or execute unless separately
     authorised, requiring no bespoke AI query service at this stage.
+31. Decision 4 ("Independent assurance: R2D2") is superseded by the
+    assurance model established during PID-01/PID-02 and reaffirmed
+    here: FORGE Engineer -> fresh independent FORGE Auditor -> Rogue
+    review/independent verification -> CI/runtime evidence -> Architect
+    acceptance is the normal path for every PID. R2D2 is reserved for
+    material architecture/security disputes, major system assurance
+    points, production promotion, executable trust-boundary assurance,
+    destructive recovery/restore, or when specifically requested by the
+    Architect -- not mandatory/default assurance for routine PID
+    closure. Decision 4's original text is preserved above, unedited,
+    as the historical record of what was originally decided.

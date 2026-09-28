@@ -20,5 +20,7 @@ default.
 
 The choice between mTLS and another strongly authenticated transport
 remains an implementation decision until proven against the pinned
-Graylog stack. The chosen mechanism must be documented and R2D2-audited
+Graylog stack. The chosen mechanism must be documented and independently audited
+(a fresh FORGE Auditor; R2D2 only for a genuine security/trust-
+boundary dispute or when the Architect specifically requests it)
 before producer onboarding.

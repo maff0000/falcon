@@ -5,7 +5,7 @@
 **GitHub:** `maff0000/falcon`\
 **Time standard:** UTC only\
 **Build engineering:** Rogue / FORGE\
-**Independent assurance:** R2D2\
+**Independent assurance:** FORGE Auditor (R2D2 by exception)\
 **Infrastructure / operations:** HELM
 
 ## Repository identity — read before any FALCON work

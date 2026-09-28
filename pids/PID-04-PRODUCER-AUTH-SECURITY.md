@@ -2,7 +2,7 @@
 
 **Slug:** `producer-auth`\
 **Owner:** Rogue/FORGE\
-**Assurance:** R2D2\
+**Assurance:** FORGE Auditor (R2D2 by exception)\
 **Ops authority where applicable:** HELM\
 **Time:** UTC only
 
