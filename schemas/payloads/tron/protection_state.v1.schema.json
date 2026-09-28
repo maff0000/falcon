@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/protection_state.v1.schema.json",
+  "title": "FalconEvent payload: tron.protection_state (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.protection_state'.",
+  "type": "object",
+  "properties": {
+    "position_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protection_type": {
+      "type": "string",
+      "enum": [
+        "STOP_LOSS",
+        "TAKE_PROFIT",
+        "TRAILING_STOP"
+      ]
+    },
+    "protection_level_decimal": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?$"
+    },
+    "protection_level_numeric": {
+      "type": "number"
+    },
+    "protection_status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "TRIGGERED",
+        "CANCELLED"
+      ]
+    }
+  },
+  "required": [
+    "position_id",
+    "protection_type",
+    "protection_level_decimal",
+    "protection_status"
+  ],
+  "additionalProperties": false
+}

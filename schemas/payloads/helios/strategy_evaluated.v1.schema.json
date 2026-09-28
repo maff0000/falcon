@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/helios/strategy_evaluated.v1.schema.json",
+  "title": "FalconEvent payload: helios.strategy_evaluated (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'helios.strategy_evaluated'.",
+  "type": "object",
+  "properties": {
+    "evaluation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "strategy_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "strategy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "semantic_fingerprint": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parameter_set_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_snapshot_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_snapshot_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timeframe": {
+      "type": "string",
+      "enum": [
+        "M1",
+        "M5",
+        "M15",
+        "M30",
+        "H1",
+        "H4",
+        "D1",
+        "W1"
+      ]
+    },
+    "state_before": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state_after": {
+      "type": "string",
+      "minLength": 1
+    },
+    "conditions_satisfied": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0
+    },
+    "conditions_failed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0
+    }
+  },
+  "required": [
+    "evaluation_id",
+    "strategy_id",
+    "strategy_version",
+    "semantic_fingerprint",
+    "parameter_set_id",
+    "input_snapshot_id",
+    "input_snapshot_hash",
+    "instrument_id",
+    "timeframe",
+    "state_before",
+    "state_after",
+    "conditions_satisfied",
+    "conditions_failed"
+  ],
+  "additionalProperties": false
+}

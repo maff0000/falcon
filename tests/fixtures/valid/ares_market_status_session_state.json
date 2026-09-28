@@ -1,0 +1,31 @@
+{
+  "falcon_event_id": "00000007-0000-4000-8000-000000000007",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "ares",
+  "producer_component_id": "ares.market_status_service",
+  "evidence_family": "ares.market_status.session_state",
+  "evidence_type": "fx_session_state",
+  "evidence_class": "STATE_SNAPSHOT",
+  "produced_at_utc": "2026-09-28T07:00:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T07:00:00Z",
+  "subject_id": "LONDON_FX",
+  "instrument_ids": [
+    "XAUUSD",
+    "EURUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "ares",
+    "upstream_ref": "ares:ares.market_status.session_state:7"
+  },
+  "payload_hash": "sha256:a3bc0c9d81ffdecc03d659206237c519838ca41a20cd1631cda9cac21637fff5",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "session_id": "ares-sess-london-fx-20260928",
+    "market_id": "LONDON_FX",
+    "session_state": "OPEN"
+  },
+  "effective_from_utc": "2026-09-28T07:00:00Z",
+  "effective_until_utc": "2026-09-28T15:30:00Z"
+}

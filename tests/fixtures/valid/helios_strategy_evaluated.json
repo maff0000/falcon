@@ -1,0 +1,42 @@
+{
+  "falcon_event_id": "0000000c-0000-4000-8000-00000000000c",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "helios",
+  "producer_component_id": "helios.evaluation_engine",
+  "evidence_family": "helios.strategy_evaluated",
+  "evidence_type": "strategy_evaluation_cycle",
+  "evidence_class": "DETERMINISTIC_DERIVATION",
+  "produced_at_utc": "2026-09-28T09:20:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:20:00Z",
+  "subject_id": "gold_context_trigger",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "helios",
+    "upstream_ref": "helios:helios.strategy_evaluated:12"
+  },
+  "payload_hash": "sha256:9a3aa24a1140e9d2c794c81ac5a64a9e70bfb7533e32ed6dd9d57e77e5ab6c68",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "evaluation_id": "helios-eval-0001",
+    "strategy_id": "gold_context_trigger",
+    "strategy_version": "1.0.0",
+    "semantic_fingerprint": "sha256:33557cf7b6dadd20c894ce4a6c005754d11ae38c33c044abacf20f46cbdd8e9e",
+    "parameter_set_id": "gold_context_trigger-default",
+    "input_snapshot_id": "helios-snap-0001",
+    "input_snapshot_hash": "sha256:28d93a3eb874b7819a3be65f500e5fdff471da4251fd1dbd050eb03baade3ad4",
+    "instrument_id": "XAUUSD",
+    "timeframe": "H1",
+    "state_before": "WATCHING",
+    "state_after": "ARMED",
+    "conditions_satisfied": [
+      "trend_alignment",
+      "liquidity_normal"
+    ],
+    "conditions_failed": []
+  },
+  "causation_id": "00000001-0000-4000-8000-000000000001"
+}

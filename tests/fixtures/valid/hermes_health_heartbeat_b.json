@@ -1,0 +1,26 @@
+{
+  "falcon_event_id": "00000005-0000-4000-8000-000000000005",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "hermes",
+  "producer_component_id": "hermes.quality_monitor",
+  "evidence_family": "hermes.health",
+  "evidence_type": "feed_service_health",
+  "evidence_class": "OPERATIONAL_HEALTH",
+  "produced_at_utc": "2026-09-28T08:11:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T08:11:00Z",
+  "subject_id": "hermes.quality_monitor",
+  "instrument_ids": [],
+  "provenance_ref": {
+    "producer_system_id": "hermes",
+    "upstream_ref": "hermes:hermes.health:5"
+  },
+  "payload_hash": "sha256:0df7e0e86550decbf6c8e7a909bd9a7215eb8bce547f29243ea8b4166b66ab5a",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "component_health_id": "hermes-health-feed-01",
+    "health_status": "HEALTHY",
+    "detail": "feed nominal"
+  }
+}

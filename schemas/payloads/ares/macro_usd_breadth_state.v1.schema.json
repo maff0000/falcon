@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/ares/macro_usd_breadth_state.v1.schema.json",
+  "title": "FalconEvent payload: ares.macro_usd.breadth_state (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'ares.macro_usd.breadth_state'.",
+  "type": "object",
+  "properties": {
+    "breadth_measure_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "breadth_state": {
+      "type": "string",
+      "enum": [
+        "STRENGTHENING",
+        "WEAKENING",
+        "NEUTRAL",
+        "UNKNOWN"
+      ]
+    }
+  },
+  "required": [
+    "breadth_measure_id",
+    "breadth_state"
+  ],
+  "additionalProperties": false
+}

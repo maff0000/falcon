@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/execution_quality.v1.schema.json",
+  "title": "FalconEvent payload: tron.execution_quality (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.execution_quality'.",
+  "type": "object",
+  "properties": {
+    "order_intent_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "slippage_decimal": {
+      "type": "string",
+      "pattern": "^-?\\d+(\\.\\d+)?$"
+    },
+    "slippage_numeric": {
+      "type": "number"
+    },
+    "latency_ms": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "order_intent_id",
+    "slippage_decimal",
+    "latency_ms"
+  ],
+  "additionalProperties": false
+}

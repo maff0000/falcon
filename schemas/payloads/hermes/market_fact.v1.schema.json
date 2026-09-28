@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/hermes/market_fact.v1.schema.json",
+  "title": "FalconEvent payload: hermes.market_fact (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'hermes.market_fact'.",
+  "type": "object",
+  "properties": {
+    "fact_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "derivation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "series_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "value_decimal": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?$"
+    },
+    "value_numeric": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reference_price_decimal": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?$"
+    },
+    "reference_price_numeric": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "fact_id",
+    "derivation_id",
+    "instrument_id",
+    "series_id",
+    "value_decimal",
+    "unit"
+  ],
+  "additionalProperties": false
+}

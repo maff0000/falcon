@@ -1,0 +1,31 @@
+{
+  "falcon_event_id": "00000019-0000-4000-8000-000000000019",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "tron",
+  "producer_component_id": "tron.execution_engine",
+  "evidence_family": "tron.exit",
+  "evidence_type": "paper_position_exit",
+  "evidence_class": "EXECUTION",
+  "produced_at_utc": "2026-09-28T11:00:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T11:00:00Z",
+  "subject_id": "tron-pos-0001",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "tron",
+    "upstream_ref": "tron:tron.exit:25"
+  },
+  "payload_hash": "sha256:98a740a0d4bf8d552e4ab906535043918d489e25a3f0a2e1e058ba867a9899da",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "position_id": "tron-pos-0001",
+    "exit_id": "tron-exit-0001",
+    "exit_reason": "TAKE_PROFIT_HIT",
+    "exit_price_decimal": "3900.00",
+    "exit_price_numeric": 3900.0
+  },
+  "causation_id": "00000018-0000-4000-8000-000000000018"
+}

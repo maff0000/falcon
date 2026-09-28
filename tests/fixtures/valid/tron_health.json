@@ -1,0 +1,25 @@
+{
+  "falcon_event_id": "0000001c-0000-4000-8000-00000000001c",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "tron",
+  "producer_component_id": "tron.execution_engine",
+  "evidence_family": "tron.health",
+  "evidence_type": "execution_engine_health",
+  "evidence_class": "OPERATIONAL_HEALTH",
+  "produced_at_utc": "2026-09-28T09:26:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:26:00Z",
+  "subject_id": "tron.execution_engine",
+  "instrument_ids": [],
+  "provenance_ref": {
+    "producer_system_id": "tron",
+    "upstream_ref": "tron:tron.health:28"
+  },
+  "payload_hash": "sha256:baaefdc53e58bc95d1e8327fa1137ce475b778767c0a6be3d2d7cca41d7d2ce3",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "component_health_id": "tron-health-exec-01",
+    "health_status": "HEALTHY"
+  }
+}

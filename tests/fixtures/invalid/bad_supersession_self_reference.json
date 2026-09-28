@@ -1,0 +1,31 @@
+{
+  "falcon_event_id": "00000003-0000-4000-8000-000000000003",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "hermes",
+  "producer_component_id": "hermes.quality_monitor",
+  "evidence_family": "hermes.market_quality",
+  "evidence_type": "feed_freshness_transition",
+  "evidence_class": "SOURCE_QUALITY",
+  "produced_at_utc": "2026-09-28T08:05:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T08:05:00Z",
+  "subject_id": "XAUUSD",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "hermes",
+    "upstream_ref": "hermes:hermes.market_quality:3"
+  },
+  "payload_hash": "sha256:f4283f563a550f9313764ea2c98772c2f98bc8a4d744d4d72ebe4f2ea0b08761",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "quality_transition_id": "hermes-qual-xauusd-0001",
+    "derivation_id": "hermes-deriv-quality-v1",
+    "instrument_id": "XAUUSD",
+    "previous_quality_state": "FRESH",
+    "new_quality_state": "STALE"
+  },
+  "supersedes_event_id": "00000003-0000-4000-8000-000000000003"
+}

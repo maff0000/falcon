@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/order_update.v1.schema.json",
+  "title": "FalconEvent payload: tron.order_update (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.order_update'.",
+  "type": "object",
+  "properties": {
+    "broker_order_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "update_type": {
+      "type": "string",
+      "enum": [
+        "ACKNOWLEDGED",
+        "PARTIALLY_FILLED",
+        "CANCELLED",
+        "REJECTED"
+      ]
+    },
+    "detail": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "broker_order_id",
+    "update_type"
+  ],
+  "additionalProperties": false
+}

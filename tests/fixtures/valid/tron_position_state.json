@@ -1,0 +1,31 @@
+{
+  "falcon_event_id": "00000017-0000-4000-8000-000000000017",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "tron",
+  "producer_component_id": "tron.execution_engine",
+  "evidence_family": "tron.position_state",
+  "evidence_type": "paper_position_state",
+  "evidence_class": "STATE_SNAPSHOT",
+  "produced_at_utc": "2026-09-28T09:25:16Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:25:16Z",
+  "subject_id": "tron-pos-0001",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "tron",
+    "upstream_ref": "tron:tron.position_state:23"
+  },
+  "payload_hash": "sha256:f096ea75a668a7995921e2d3b5c3599fc453d5b586744a2c6a9fcddbf29335b6",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "position_id": "tron-pos-0001",
+    "instrument_id": "XAUUSD",
+    "position_state_value": "OPEN",
+    "net_quantity_decimal": "0.10",
+    "net_quantity_numeric": 0.1
+  },
+  "causation_id": "00000016-0000-4000-8000-000000000016"
+}

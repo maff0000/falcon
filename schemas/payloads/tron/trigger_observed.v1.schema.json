@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/trigger_observed.v1.schema.json",
+  "title": "FalconEvent payload: tron.trigger_observed (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.trigger_observed'.",
+  "type": "object",
+  "properties": {
+    "local_trigger_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_trigger_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "signature_status": {
+      "type": "string",
+      "enum": [
+        "VALID",
+        "INVALID",
+        "EXPIRED_KEY",
+        "UNKNOWN"
+      ]
+    }
+  },
+  "required": [
+    "local_trigger_id",
+    "source_trigger_id",
+    "instrument_id",
+    "signature_status"
+  ],
+  "additionalProperties": false
+}

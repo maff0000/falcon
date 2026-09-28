@@ -1,0 +1,31 @@
+{
+  "falcon_event_id": "00000002-0000-4000-8000-000000000002",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "hermes",
+  "producer_component_id": "hermes.market_data_service",
+  "evidence_family": "hermes.market_state",
+  "evidence_type": "session_liquidity_state",
+  "evidence_class": "NORMALIZED_FACT",
+  "produced_at_utc": "2026-09-28T08:00:05Z",
+  "falcon_ingested_at_utc": "2026-09-28T08:00:05Z",
+  "subject_id": "XAUUSD",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "hermes",
+    "upstream_ref": "hermes:hermes.market_state:2"
+  },
+  "payload_hash": "sha256:1bcf3a905f1d45575d790201094a455d57338cfef07f72805df46a13087a0535",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "state_id": "hermes-state-xauusd-0001",
+    "derivation_id": "hermes-deriv-session-v1",
+    "instrument_id": "XAUUSD",
+    "state_value": "ACTIVE_SESSION",
+    "previous_state_value": "PRE_SESSION"
+  },
+  "quality_state": "FRESH"
+}

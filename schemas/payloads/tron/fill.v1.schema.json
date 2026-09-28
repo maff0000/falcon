@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/fill.v1.schema.json",
+  "title": "FalconEvent payload: tron.fill (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.fill'.",
+  "type": "object",
+  "properties": {
+    "broker_order_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fill_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "fill_price_decimal": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?$"
+    },
+    "fill_price_numeric": {
+      "type": "number"
+    },
+    "fill_quantity_decimal": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?$"
+    },
+    "fill_quantity_numeric": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "broker_order_id",
+    "fill_id",
+    "instrument_id",
+    "fill_price_decimal",
+    "fill_quantity_decimal"
+  ],
+  "additionalProperties": false
+}

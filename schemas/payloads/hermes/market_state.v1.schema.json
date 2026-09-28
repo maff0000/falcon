@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/hermes/market_state.v1.schema.json",
+  "title": "FalconEvent payload: hermes.market_state (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'hermes.market_state'.",
+  "type": "object",
+  "properties": {
+    "state_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "derivation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state_value": {
+      "type": "string",
+      "minLength": 1
+    },
+    "previous_state_value": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "state_id",
+    "derivation_id",
+    "instrument_id",
+    "state_value"
+  ],
+  "additionalProperties": false
+}

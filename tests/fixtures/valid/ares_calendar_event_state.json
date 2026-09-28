@@ -1,0 +1,32 @@
+{
+  "falcon_event_id": "00000006-0000-4000-8000-000000000006",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "ares",
+  "producer_component_id": "ares.calendar_service",
+  "evidence_family": "ares.calendar.event_state",
+  "evidence_type": "scheduled_macro_release",
+  "evidence_class": "DOMAIN_DECISION",
+  "produced_at_utc": "2026-09-28T09:00:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:00:00Z",
+  "subject_id": "US_NFP",
+  "instrument_ids": [
+    "XAUUSD",
+    "EURUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "ares",
+    "upstream_ref": "ares:ares.calendar.event_state:6"
+  },
+  "payload_hash": "sha256:740e815cb241ca9e141b775d9e704fdd3aa70918919d354b575f8aeb6cc5b3a0",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "calendar_event_id": "ares-cal-nfp-2026-10-02",
+    "event_name": "US Non-Farm Payrolls",
+    "scheduled_at_utc": "2026-10-02T12:30:00Z",
+    "event_state": "SCHEDULED",
+    "impact_level": "HIGH"
+  },
+  "correlation_id": "us-nfp-2026-10-02-cycle"
+}
