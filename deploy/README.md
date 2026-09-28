@@ -131,3 +131,264 @@ change the target system's default index set first.
 > requires the body wrapped as `{"entity": {"parameters": {}, "comment":
 > "..."}}` — a bare `{"parameters": {}, "comment": "..."}` body 400s with
 > a confusing `entity cannot be null` error.
+
+---
+
+# PID-03 — Canonical Graylog Ingestion Path (FALCON Producer Ingest)
+
+This section documents PID-03's real, running, proven ingestion path built
+entirely on Graylog-native mechanisms (input → pipeline → streams), with
+no bespoke FALCON ingress service anywhere in it (decision 21/22).
+
+## Transport decision: GELF TCP
+
+Evidence gathered against this pinned 7.1.9 instance before choosing:
+
+| Input type | Reliable delivery? | Structured fields? | Verdict |
+|---|---|---|---|
+| GELF UDP | No — fire-and-forget, no delivery guarantee | Yes | Rejected: FALCON has no producer whose events are explicitly disposable/loss-acceptable |
+| GELF HTTP | Yes (TCP under the hood, per-request) | Yes | Viable, but a new TCP connection (or connection reuse) per event is heavier than a long-lived GELF TCP session for a high-frequency producer; kept as a documented fallback, not chosen |
+| Raw/Plaintext TCP | Yes | No structured field extraction — everything is unstructured "message" text unless a producer builds its own JSON and a pipeline parses it from scratch | Rejected: GELF's additional-field mechanism is a better fit for a FalconEvent's already-typed fields |
+| **GELF TCP** | **Yes** — TCP connection, `use_null_delimiter`, framed messages | **Yes** — arbitrary additional fields, native JSON types preserved | **Chosen** |
+
+Empirically confirmed on `FALCON Producer Ingest (GELF TCP)` (created via
+`POST /api/system/inputs`, `bind_address: 0.0.0.0`, `port: 12401`,
+`tls_enable: false`, falcon-net-only — no `ports:` mapping to the host,
+reachable only by containers on `falcon-net`, matching how a real
+HERMES/ARES/HELIOS/TRON producer container would eventually reach it):
+
+- a GELF additional field's leading underscore (`_falcon_event_id`) is
+  **stripped** by Graylog on receipt, so canonical PID-01 field names
+  survive completely unrenamed (`falcon_event_id`, `producer_system_id`,
+  etc.);
+- GELF has no native representation for a JSON object/array as an
+  additional field, so the FTE sender JSON-encodes `payload`,
+  `provenance_ref` and `instrument_ids` into `_payload_json` /
+  `_provenance_ref_json` / `_instrument_ids_json` string fields, and the
+  "FALCON Ingestion" pipeline's `parse_json()` + `set_fields(prefix:
+  "payload_"/"provenance_ref_")` rules un-flatten `payload_json` and
+  `provenance_ref_json` back into individual, searchable, correctly-typed
+  fields (`instrument_ids_json` is left as a raw JSON array string — short
+  enough that flattening it further wasn't worth the complexity);
+- **decimal-string precision survives byte-for-byte**: a payload field
+  like `"price_decimal": "3872.45"` (quoted, JSON string) is decoded by
+  `parse_json()` as a Java `String`, not a number — proven for all 7
+  `*_decimal` fields across the 4 tested producer families (see evidence
+  below). A payload field sent as a bare JSON number instead (e.g.
+  `wrong_type.json`'s `quantity_decimal: 0.1`) is likewise decoded as a
+  real `Double`, which is exactly how the negative case is detected
+  (`is_string()` on that field returns `false`).
+- ordinary JSON scalar fields (numbers, strings, booleans) round-trip
+  with their real type intact.
+
+## The "FALCON Ingestion" pipeline
+
+Connected to the **Default Stream** (all messages start there before
+routing). Three stages, each existing because of a specific mechanic
+confirmed empirically on this Graylog 7.1.9 build (**not** assumed from
+documentation):
+
+1. **Stage 0 — un-flatten + FALCON-owned timestamp.** `parse_json()` +
+   `set_fields()` project `payload_json`/`provenance_ref_json` into
+   individual fields; `falcon_ingested_at_utc` is unconditionally
+   overwritten with the real Graylog processing time (`now("UTC")`),
+   regardless of whatever the producer sent for that field — this is the
+   field's FALCON-owned-not-producer-supplied contract requirement.
+2. **Stage 1 — native structural validation.** Ten rules flag (but do
+   not repair) structural violations: missing required envelope fields;
+   unregistered `producer_system_id`; unregistered `producer_component_id`
+   (against `registry/system_component_registry.v1.json`'s exact list);
+   unregistered/reserved-not-live `evidence_family` (the 25 currently-live
+   families, explicitly excluding `ares.regime.nowcast`); non-UTC/naive
+   `produced_at_utc`; a `*_decimal` payload field that arrived as a number
+   instead of a string; a `causation_id` that isn't UUID-shaped (i.e. a
+   correlation-style label misused as a specific causing-event
+   reference); `supersedes_event_id == falcon_event_id`
+   (self-supersession); an unregistered `score_definition_id`; and one
+   targeted cross-family field-scope check (`broker_order_id`, a
+   TRON-only registered field, appearing in a `hermes.market_fact`
+   payload). A dedicated always-true "stage 1 passthrough" rule exists
+   purely so this stage always has at least one match — see the pipeline
+   mechanics note below.
+3. **Stage 2 — route.** One rule routes anything flagged in stage 1 to
+   `FALCON: Quarantine`; six further rules route everything else to its
+   trusted stream by `producer_system_id`/`evidence_family`
+   (`FALCON: HERMES evidence`, `FALCON: ARES evidence`,
+   `FALCON: HELIOS evidence`, `FALCON: HELIOS Trade Suggestions` for
+   `helios.strategy_trigger` specifically, `FALCON: TRON evidence`,
+   `FALCON: Operational Health Evidence` for any `*.health` family). Each
+   of these seven rules repeats the **full, self-contained** "is this
+   message invalid" condition rather than reading a shared
+   `falcon_validity` field set by a sibling rule — see below for why.
+
+### Two non-obvious Graylog 7.1.9 pipeline mechanics discovered during delivery
+
+These cost real debugging time and are recorded here so nobody re-derives
+them the hard way:
+
+1. **Rules within the same stage do not see each other's field
+   mutations.** A rule that reads a field set by an earlier rule
+   *in the same stage* sees the message as it existed at the *start* of
+   that stage, not after the earlier rule ran. (Confirmed: a "flag
+   decimal type violation" rule placed in the same stage as the
+   "parse payload JSON" rule silently never saw the parsed
+   `payload_*` fields at all, even though it was listed later in that
+   stage — moving it to the *next* stage fixed it immediately.) Only
+   rules in a **later stage** reliably see an earlier stage's mutations.
+2. **A stage with zero matching rules under `stage N match either` halts
+   the pipeline before the next stage runs at all** — for that message,
+   no further stage's rules execute, however unconditional their own
+   logic would otherwise be. This is silent: no error, no log entry, the
+   message just never gets routed and stays wherever it already was
+   (typically the Default Stream). It bit this pipeline twice: once when
+   the quarantine-only rule was alone in its own stage (a clean valid
+   message makes zero rules in a pure-flag-check stage match, so nothing
+   ever reached the routing stage at all), and it is why stage 1 now
+   carries an explicit always-true "passthrough" rule purely to guarantee
+   stage 1 always has ≥1 match regardless of whether the message is
+   valid or not.
+
+Because of (1), the six "route valid X" rules cannot cheaply read a
+`falcon_validity` field set by the quarantine rule in the *same* stage —
+so each inlines the complete 10-condition "is this invalid" check itself
+rather than depending on that shared field.
+
+### Content-Pack round-trip: id-based `route_to_stream` does NOT survive reinstall
+
+A third, distinct, and equally important finding, specific to exporting
+a **pipeline** (new ground PID-02 didn't cover — PID-02 only exported a
+stream + saved search): `route_to_stream(id: "<hardcoded-stream-id>")`
+embeds the *live* stream's Mongo ObjectId as a literal string inside the
+rule's own DSL source text. A content-pack reinstall recreates the
+stream under a **new** id (exactly like PID-02 already found for a
+stream's `index_set_id`), but — unlike `index_set_id`, which is a
+structured JSON field Graylog's installer knows how to leave for a
+human to fix — the id embedded inside a rule's *source string* is just
+opaque text to the content-pack mechanism. It is never rewritten, so
+every `route_to_stream(id: ...)` call keeps pointing at a stream that no
+longer exists post-reinstall, and the message silently stays on the
+Default Stream forever with no error anywhere.
+
+**Fix, proven by two independent delete-everything-and-reinstall
+cycles:** use `route_to_stream(name: "FALCON: HERMES evidence", ...)`
+instead of `id:`. Graylog resolves `name` by exact stream title at
+*rule-evaluation* time, not at content-pack-install time, so it
+transparently survives a stream getting a new id on every reinstall as
+long as its title is unchanged. All seven routing rules in
+`deploy/content-packs/falcon-pid03-ingestion-v1.json` use `name:`, and
+this was re-verified end-to-end (full positive+negative suite, 4/4
+positive PASS, identical outcome per negative class) after the second,
+corrected round trip.
+
+## Content Pack
+
+`deploy/content-packs/falcon-pid03-ingestion-v1.json` — kept as a
+**separate, new-versioned file** from PID-02's `falcon-baseline-v1.json`
+(not folded in) because PID-03 adds a materially different, much larger,
+live-traffic-critical set of entities (an input and a validation/routing
+pipeline with 21 rules) versus PID-02's one demo stream + saved search;
+separate lifecycle/versioning was judged the right call.
+
+Contains: the `FALCON Producer Ingest (GELF TCP)` input, the
+`FALCON Ingestion` pipeline, its 21 rules, and all 7 FALCON streams.
+
+Known limitations on reinstall (inherited from PID-02's own finding plus
+the new one above — both require a short manual fixup after installing):
+- new streams install **disabled** — `POST
+  /api/streams/{id}/resume` each one;
+- new streams install against whichever index set is default, **not**
+  `FALCON Evidence` — `PUT /api/streams/{id}` with the real
+  `FALCON Evidence` index set id;
+- the pipeline is **not** automatically connected to the Default
+  Stream — `POST /api/system/pipelines/connections/to_stream` with
+  `stream_id: "000000000000000000000001"`.
+
+Verified twice end-to-end: delete every FALCON input/pipeline/rule/stream
+→ reinstall from the content pack → apply the three fixups above → send
+all 4 positive + all 13 negative fixtures again → identical results both
+times.
+
+## FTE (FALCON Test Engine) bootstrap
+
+`tests/fte/sender.py` — loads a PID-01 fixture JSON file, flattens it to
+a GELF message (per the transport-decision section above) and sends it
+over GELF TCP. Implements no HERMES/ARES/HELIOS/TRON business logic; it
+only ever loads and forwards existing fixture JSON, per PID-03's bounded
+FTE-bootstrap scope. Assessed and decided: this lives inside the FALCON
+repo's own `tests/` tree, not a new `maff0000/falcon-test-engine`
+repository — the sender is a thin (~140 line), single-purpose fixture
+forwarder for proving ingestion, not a real test-engine product, and
+creating a separate repository for it would be disproportionate to what
+PID-03 actually needs.
+
+`tests/fte/run_pid03_tests.py` — the automated positive/negative proof
+suite (stdlib-only, matching `tests/validator`'s convention). Config via
+environment variables only, fails loudly if unset (`GRAYLOG_API_BASE`,
+`GRAYLOG_USER`, `GRAYLOG_PASSWORD`; `GELF_HOST`/`GELF_PORT` optional,
+default `graylog-falcon:12401`). Every send carries a unique
+`_fte_send_marker` GELF field (test-harness-only, not a FalconEvent
+contract field) so repeated runs against fixtures that intentionally
+reuse a `falcon_event_id` across the valid/invalid corpus (structural
+mutations of one base event) can always be looked up unambiguously.
+
+Run it from a container on `falcon-net` (a real producer would be on
+this network too — no host port is exposed for the input):
+
+```bash
+docker run --rm --network falcon-net \
+  -v /srv/falcon-worktrees/wo-PID-03-graylog-ingestion-templates:/repo \
+  -e GRAYLOG_API_BASE=http://graylog-falcon:9000/api \
+  -e GRAYLOG_USER=admin \
+  -e GRAYLOG_PASSWORD=<the real root password> \
+  python:3.11-slim python3 /repo/tests/fte/run_pid03_tests.py
+```
+
+Latest run: **4/4 positive fixtures PASS** (HERMES/ARES/HELIOS/TRON, one
+each, with full field-preservation + decimal-precision proof); of the 13
+negative fixtures, **11 are natively quarantined** and 2 are documented,
+evidenced exceptions (see PID-03 delivery report / hard-stop notes):
+`unknown_field.json` (Graylog 7.1.9 pipeline rules cannot enumerate an
+arbitrary JSON object's keys — no map-iteration/size function exists in
+the rule DSL — so an unregistered extra payload field is structurally
+undetectable without re-implementing a full schema validator, which this
+PID is explicitly barred from doing) and
+`identity_violation_reused_event_id.json` (by design, per decision 22:
+FALCON provides no bespoke application-level idempotency/dedupe service;
+a reused `falcon_event_id` with a different payload is a consumer-side
+(e.g. TRON's own governed durable dedupe) concern, not an ingestion-time
+one). Full machine-readable output: `tests/fte/last_run_report.json`.
+
+## Restart/recovery proof
+
+- `docker restart graylog-falcon`: recovered to `healthy` in ~25s;
+  FALCON's Mongo-backed config (streams/pipeline/rules/input) survived
+  untouched; a fixture sent immediately after came through end-to-end
+  correctly.
+- `docker restart datanode-falcon`: recovered to `healthy` in ~35s;
+  `graylog-falcon` stayed healthy throughout (it depends on Data Node's
+  OpenSearch-compatible HTTP port); a fixture sent immediately after came
+  through end-to-end correctly.
+- **Input-unavailability gap, honestly characterised:** stopping the GELF
+  TCP input (`DELETE /api/system/inputstates/{id}`) and then attempting a
+  send produces an immediate `ConnectionRefusedError` on the sender side
+  — GELF TCP has no broker-side buffering for a connection that was never
+  accepted, so **delivery during an input outage depends entirely on the
+  producer's own retry/backoff logic**, not on any guarantee Graylog or
+  FALCON provides. Restarting the input (`PUT
+  /api/system/inputstates/{id}`) restores normal delivery immediately;
+  no message sent during the gap was ever recovered (correctly — it was
+  never accepted in the first place, so there was nothing for Graylog's
+  journal to have durably held).
+- The pre-existing, unrelated Project IRIS Graylog stack (`graylog` /
+  `graylog-mongo` / `graylog-elasticsearch`) was checked immediately
+  before and after every restart above and was unaffected throughout
+  (uptime never reset, never restarted).
+
+## Malformed transport payload
+
+Sending genuine non-JSON garbage bytes (not a GELF-shaped message at
+all) to the GELF TCP input results in Graylog's own GELF codec silently
+discarding it before a Graylog `Message` object is ever created — it
+never reaches the pipeline, is never indexed anywhere, and is not
+distinguishable from network noise. This is Graylog's own
+transport-layer behaviour, not a FALCON-level check.
