@@ -33,8 +33,8 @@ environment.
                                      news/assessment evidence
 
   HELIOS                             Deterministic strategy evaluation,
-                                     chain state and signed strategy
-                                     triggers
+                                     chain state and signed Trade
+                                     Suggestions
 
   TRON                               Admission, sizing, broker
                                      execution, fills, positions, exits
@@ -62,12 +62,12 @@ FALCON does not reinterpret producer domain truth.
     UTC T.
 7.  Correlation and causation are distinct.
 8.  Producer authentication and namespace isolation are mandatory.
-9.  HELIOS executable triggers require cryptographic authenticity.
+9.  HELIOS Trade Suggestions require cryptographic authenticity.
 10. Producer outages and FALCON outages fail loudly and remain
     semantically distinct from market state.
 11. Producer durable truth must not depend on FALCON availability.
 12. FALCON/Graylog is a dependency for discovery of **new** entries if
-    TRON uses it as the trigger source; existing position
+    TRON uses it as the Trade Suggestion source; existing position
     protection/exits must remain independent.
 13. No secrets in Git, images or FalconEvents.
 14. No config in code and no silent fallback.
@@ -78,9 +78,10 @@ FALCON does not reinterpret producer domain truth.
 
 MVP is achieved when: - Dockerised FALCON/Graylog stack runs on
 dell-debian. - HERMES, canonical ARES, HELIOS and paper TRON can publish
-governed evidence. - HELIOS signed triggers can be discovered by paper
-TRON through FALCON. - Full trigger-to-outcome forensic timelines are
-queryable in Graylog GUI. - ARES scheduled events are visible before
+governed evidence. - HELIOS signed Trade Suggestions can be discovered
+by paper TRON through FALCON. - Full Trade-Suggestion-to-outcome
+forensic timelines are queryable in Graylog GUI. - ARES scheduled events
+are visible before
 occurrence with point-in-time history. - retries, duplicates, outage,
 replay, schema rejection and auth rejection are proven. - capacity
 telemetry exists for production sizing. - backup/restore is proven. -

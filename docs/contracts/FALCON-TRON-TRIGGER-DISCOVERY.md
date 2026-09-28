@@ -1,9 +1,10 @@
-# FALCON → TRON Trigger Discovery Contract
+# FALCON → TRON Trade Suggestion Discovery Contract
 
 ## Query scope
 
-TRON credentials are read-only and restricted to the HELIOS
-executable-trigger surface required by that TRON deployment.
+TRON credentials are read-only and restricted to the HELIOS Trade
+Suggestion surface (the registered `helios.strategy_trigger` family)
+required by that TRON deployment.
 
 ## Windowing
 
@@ -20,13 +21,13 @@ within policy; - schema supported.
 ## Response
 
 FALCON returns evidence; it does not tell TRON "execute." TRON
-independently verifies trigger signature and applies admission/execution
-authority.
+independently verifies the Trade Suggestion's signature and applies its
+own admission/execution authority.
 
 ## Health
 
 TRON must distinguish: - FALCON unreachable; - query/auth failure; -
-excessive ingestion lag; - no matching trigger; - invalid/untrusted
-trigger.
+excessive ingestion lag; - no matching Trade Suggestion; -
+invalid/untrusted Trade Suggestion.
 
 "No result" must never conceal infrastructure failure.

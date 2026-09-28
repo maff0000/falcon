@@ -44,8 +44,13 @@ Minimum delivery states: PENDING, RETRYING, DELIVERED, DEAD_LETTER.
 
 ## Acknowledgement
 
-ARES marks delivered only after FALCON returns accepted or idempotently
-accepted. Schema/auth rejection and transient failure are distinct.
+ARES marks its own outbox row DELIVERED once its governed
+Graylog-native transport confirms the emitted evidence was
+received. FALCON provides no separate bespoke application-level
+acceptance or idempotency service; PID-03 empirically characterises
+the selected native mechanism's exact confirmation and replay
+behaviour. Schema/auth rejection and transient failure remain
+distinct wherever the native mechanism can distinguish them.
 
 ## Graylog independence
 

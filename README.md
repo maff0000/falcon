@@ -5,7 +5,7 @@
 **GitHub:** `maff0000/falcon`\
 **Time standard:** UTC only\
 **Build engineering:** Rogue / FORGE\
-**Independent assurance:** R2D2\
+**Independent assurance:** FORGE Auditor (R2D2 by exception)\
 **Infrastructure / operations:** HELM
 
 ## Repository identity — read before any FALCON work
@@ -42,20 +42,37 @@ FALCON contracts and owns no trading semantics.
 ## Active producer/consumer model
 
 ``` text
-HERMES ─────┐
-ARES ───────┼────► FALCON ingress ───► Graylog/Data Node
-HELIOS ─────┤              │                  │
-TRON ───────┘              │                  ├── technical GUI
-                            │                  ├── NEO research
-                            │                  └── TRON trigger discovery
-                            └── canonical validation/correlation
+HERMES ──────┐
+ARES ────────┤
+HELIOS ──────┼──── structured FALCON events ────► Graylog-FALCON
+TRON ────────┘                                      │
+                                                    ├── inputs
+                                                    ├── pipelines
+                                                    ├── streams
+                                                    ├── journal
+                                                    ├── Data Node
+                                                    ├── indexes
+                                                    ├── search
+                                                    ├── alerts
+                                                    ├── dashboards
+                                                    └── API
+                                                         │
+                                    ┌────────────────────┼───────────────────┐
+                                    ▼                    ▼                   ▼
+                            technical GUI            NEO research    TRON Trade Suggestion
+                                                                        discovery + admission
 ```
+
+Each producer constructs its own conformant FalconEvent (PID-01's
+universal envelope + typed family schema) and sends it via an
+authorised Graylog-native transport. There is no bespoke FALCON
+middleware service standing between producers and Graylog.
 
 Authority: - **HERMES** --- governed market truth. - **ARES** ---
 governed risk/news/event/context truth; advisory unless separately
 promoted by architecture. - **HELIOS** --- deterministic
-strategy/evaluation/trigger truth; execution-blind. - **TRON** ---
-admission, execution, broker, fill, position and outcome truth. -
+strategy/evaluation/Trade Suggestion truth; execution-blind. - **TRON**
+--- admission, execution, broker, fill, position and outcome truth. -
 **FALCON** --- evidence, correlation, search, provenance and
 operational-observability truth. - **NEO** --- retrospective
 research/review consumer.

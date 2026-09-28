@@ -10,11 +10,12 @@ arbitrary producer convenience.
 -   HERMES market evidence
 -   ARES context/event evidence
 -   HELIOS strategy/evaluation evidence
--   HELIOS executable triggers
+-   HELIOS Trade Suggestions (the registered `helios.strategy_trigger`
+    family)
 -   TRON execution/outcome evidence
 -   FALCON operational/security evidence
 
-Executable HELIOS triggers receive the strictest read/write permissions.
+HELIOS Trade Suggestions receive the strictest read/write permissions.
 
 ## Indexing
 

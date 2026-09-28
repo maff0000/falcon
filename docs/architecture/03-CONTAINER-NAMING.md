@@ -20,7 +20,6 @@ Examples:
 graylog-falcon
 datanode-falcon
 mongodb-falcon
-ingress-falcon
 ```
 
 Future FALCON-specific supporting services follow the same rule:
