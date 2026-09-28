@@ -53,10 +53,13 @@ PID-01, PID-02.
 -   proof that structured fields, event-family routing, UTC
     preservation and correlation/causation/provenance fields survive
     ingestion unchanged;
--   malformed/template-negative fixtures proven to be rejected or
-    visibly flagged, with no central FALCON service that repairs a
-    malformed producer event — a bad producer is corrected at its
-    source, not patched in flight;
+-   malformed/template-negative fixtures proven to never silently
+    become trusted canonical evidence — proven empirically rejected,
+    quarantined/separately routed, or visibly classified/alerted as
+    invalid, per what the pinned Graylog 7.1.9 stack actually
+    supports (not assumed), with no central FALCON service that
+    repairs a malformed producer event — a bad producer is corrected
+    at its source, not patched in flight;
 -   FTE (FALCON Test Engine) bootstrap: the minimum fixture-sender
     needed to send known structured fixtures through the real Graylog
     ingestion path and assert the results above (full FTE
@@ -106,8 +109,11 @@ Explicitly excluded from this PID:
     Graylog with correct structured fields, correct event-family
     routing, correct UTC preservation and correct
     correlation/causation/provenance fields;
--   malformed/template-negative fixtures are proven to fail visibly
-    (not silently dropped, not silently repaired);
+-   malformed/template-negative fixtures are proven to never
+    silently become trusted canonical evidence — proven rejected,
+    quarantined, separately routed, or visibly classified/alerted as
+    invalid, per what the pinned Graylog 7.1.9 stack actually
+    supports;
 -   FTE bootstrap fixture-sender exists and exercises the positive and
     negative cases above through the real ingestion path;
 -   restart/recovery proof uses Graylog's own journal/Data Node
@@ -122,8 +128,9 @@ are proven end-to-end against the real, pinned Graylog 7.1.9 stack: each
 of the HERMES/ARES/HELIOS/TRON fixtures is accepted through a native
 Graylog input, is structured/searchable/correctly routed with UTC and
 correlation/provenance intact, and template-negative fixtures are
-proven to fail visibly — with no bespoke ingress service, no Mongo
-event ledger, no Redis and no second GUI anywhere in the path.
+proven to never silently become trusted canonical evidence — with
+no bespoke ingress service, no Mongo event ledger, no Redis and no
+second GUI anywhere in the path.
 
 A PID is not complete until its behaviour is running and proven, not
 merely coded or documented.

@@ -62,13 +62,19 @@ evidence (see "Evidence vs. trust" below).
     template above (routing, field mapping, FALCON ingestion timestamp
     assignment);
 -   namespace isolation (Graylog-native/network-native — see PID-04);
--   idempotent acceptance;
 -   Graylog routing/mapping/indexing;
 -   cross-system correlation;
 -   retention classes;
 -   search/query contract;
 -   evidence health;
 -   production capacity evidence.
+
+Producer delivery retries preserve canonical event identity where
+applicable. PID-03 will empirically characterise and prove the
+selected Graylog-native ingestion/replay behaviour. FALCON currently
+provides no separate bespoke application-level acceptance or
+idempotency service. Consumers requiring action-level deduplication,
+including TRON, retain their own governed durable dedupe.
 
 ## Evidence vs. trust
 
@@ -122,8 +128,7 @@ If FALCON is unavailable: - producers retain authoritative domain truth
 and durable export evidence; - no new TRON entry may be created from a
 Trade Suggestion that cannot be validly discovered/verified through the
 governed path; - existing broker-native SL/TP, local protection, exits,
-reconciliation and TRON journal remain independent; - recovery uses
-idempotent retry/replay.
+reconciliation and TRON journal remain independent; - recovery relies on producer-side retry (preserving canonical event identity where applicable) plus the selected Graylog-native replay mechanism, which PID-03 empirically characterises — FALCON provides no separate bespoke application-level acceptance or idempotency service of its own.
 
 ## DEV/PROD separation
 

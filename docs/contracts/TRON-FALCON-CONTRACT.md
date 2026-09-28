@@ -45,5 +45,8 @@ check failed, rejected or executed.
 ## Idempotency
 
 TRON-local durable Trade Suggestion identity is authoritative for
-preventing duplicate execution. FALCON idempotency is additional
-protection, not a substitute.
+preventing duplicate execution. FALCON currently provides no
+separate bespoke application-level acceptance or idempotency
+service; TRON's own durable dedupe is authoritative and
+self-sufficient, not a backstop for a FALCON-side layer that does
+not exist.
