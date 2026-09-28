@@ -4,13 +4,14 @@
 
 -   schema/registry unit tests;
 -   canonical fixture validation;
--   ingress auth/namespace tests;
+-   connection-security/namespace tests (source can/cannot connect —
+    PID-04's domain);
 -   idempotency tests;
 -   producer contract tests;
 -   Graylog mapping/search tests;
 -   causal reconstruction tests;
 -   point-in-time tests;
--   trigger-signature tests;
+-   Trade-Suggestion-signature tests;
 -   TRON discovery/dedupe tests;
 -   failure/replay tests;
 -   backup/restore tests;
@@ -25,7 +26,7 @@ At minimum prove one deterministic scenario:
 ARES scheduled event known
 + HERMES market evidence
 → HELIOS evaluation
-→ signed HELIOS trigger
+→ signed HELIOS Trade Suggestion
 → paper TRON observes
 → TRON admission
 → paper order/fill
@@ -33,7 +34,8 @@ ARES scheduled event known
 → complete FALCON timeline
 ```
 
-Also prove a rejected/suppressed scenario.
+Also prove a refused/suppressed scenario, with the refusal itself
+recorded as FALCON evidence.
 
 ## Definition of Done
 

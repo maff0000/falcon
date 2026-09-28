@@ -20,43 +20,74 @@ GUI. Graylog does not define domain semantics.
                        │ events/context/source quality
                        │
                        ├──────────── HELIOS
-                       │ evaluation/state/signed trigger
+                       │ evaluation/state/signed Trade Suggestion
                        │
                        └──────────── TRON
                          admission/execution/outcome
                                   │
-                                  ▼
-                        FALCON INGESTION
-                    auth → validate → registry
-                         → idempotency
-                         → ingestion UTC
+              each producer constructs its own conformant
+              FalconEvent (PID-01 universal envelope + typed
+              family schema) and sends it via an authorised
+              Graylog-native transport — no bespoke FALCON
+              ingress service sits in this path
                                   │
                                   ▼
-                              GRAYLOG
-                       + Graylog Data Node
+                           GRAYLOG-FALCON
+                inputs → pipelines → streams → journal
+                                  │
+                                  ▼
+                    Data Node + indexes (evidence now exists)
                        + MongoDB metadata
                                   │
              ┌────────────────────┼───────────────────┐
              ▼                    ▼                   ▼
-       Graylog technical GUI     NEO           TRON discovery
+       Graylog technical GUI     NEO         TRON Trade Suggestion
+                                              discovery + admission
 ```
+
+There is no bespoke FALCON middleware box between producers and Graylog.
+A message existing in Graylog/Data Node means the event exists as
+recorded evidence; it does not by itself mean any consumer (e.g. TRON)
+trusts or acts on it — that is the consumer's own governed admission
+decision, made independently and recorded back into FALCON as further
+evidence (see "Evidence vs. trust" below).
 
 ## FALCON-owned capabilities
 
--   ingress protocol;
--   producer identity/authentication;
+-   producer message template/contract, via PID-01's registries
+    (constructed by the producer itself, not a FALCON ingress service);
 -   canonical universal envelope;
 -   field/event/component registries;
--   schema validation;
--   namespace isolation;
+-   Graylog-native input/pipeline configuration that realises the
+    template above (routing, field mapping, FALCON ingestion timestamp
+    assignment);
+-   namespace isolation (Graylog-native/network-native — see PID-04);
 -   idempotent acceptance;
--   FALCON ingestion timestamp;
 -   Graylog routing/mapping/indexing;
 -   cross-system correlation;
 -   retention classes;
 -   search/query contract;
 -   evidence health;
 -   production capacity evidence.
+
+## Evidence vs. trust
+
+FALCON records evidence; it does not decide who acts on it. These are
+three distinct questions, never conflated:
+
+1.  **Ingress security** — can this source connect/send to FALCON at
+    all? (PID-04, Graylog/network-native.)
+2.  **Content contract** — does this message conform to its expected
+    FALCON structure? (PID-01's contracts, constructed by the producer.)
+3.  **Consumer trust** — should another system (e.g. TRON) act upon this
+    message? (the consuming system's own governed admission logic, not
+    FALCON's.)
+
+A HELIOS Trade Suggestion existing in FALCON, even one with an invalid
+signature, is still recorded evidence. TRON's decision to admit or
+refuse it is a separate, independent judgement, and that judgement is
+itself recorded as FALCON evidence — this is what gives NEO a complete
+forensic record.
 
 ## Non-goals
 
@@ -75,7 +106,7 @@ market/event reality
   → producer source evidence
   → producer normalized/derived state
   → HELIOS evaluation
-  → HELIOS signed trigger
+  → HELIOS signed Trade Suggestion
   → TRON admission decision
   → order/fill/position
   → exit/outcome
@@ -89,8 +120,8 @@ actual causal graph rather than fabricate links.
 
 If FALCON is unavailable: - producers retain authoritative domain truth
 and durable export evidence; - no new TRON entry may be created from a
-trigger that cannot be validly discovered/verified through the governed
-path; - existing broker-native SL/TP, local protection, exits,
+Trade Suggestion that cannot be validly discovered/verified through the
+governed path; - existing broker-native SL/TP, local protection, exits,
 reconciliation and TRON journal remain independent; - recovery uses
 idempotent retry/replay.
 

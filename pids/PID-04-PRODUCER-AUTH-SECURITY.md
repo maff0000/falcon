@@ -1,4 +1,4 @@
-# PID-04 --- Producer Authentication and Namespace Security
+# PID-04 --- Graylog Producer Connection Security
 
 **Slug:** `producer-auth`\
 **Owner:** Rogue/FORGE\
@@ -8,7 +8,13 @@
 
 ## Purpose
 
-Select and implement one common secure producer-authentication model.
+Select and implement one common, secure producer-connection model for
+HERMES, ARES, HELIOS and TRON, using Graylog-native and network-native
+mechanisms rather than a bespoke FALCON authentication gateway. This PID
+answers only one question: can this source connect/send to FALCON at
+all? It does not decide whether a message's content is well-formed
+(PID-01's contracts) or whether a consumer should act on it (the
+consumer's own admission logic).
 
 ## Dependencies
 
@@ -16,10 +22,15 @@ PID-03.
 
 ## Scope / deliverables
 
--   TLS;
--   producer credentials;
+-   TLS, terminated at the Graylog input (or an explicitly documented
+    equivalent) rather than a custom FALCON gateway;
+-   producer credentials, using Graylog's own input-level authentication
+    and/or connection-level auth where Graylog provides it, custom only
+    where genuinely necessary and evidenced;
 -   rotation/revocation procedure;
--   namespace ACL;
+-   namespace ACL, enforced via Graylog-native and network-native
+    restrictions (source allow-listing, input-level restrictions) where
+    Graylog can express it;
 -   secret-file integration;
 -   operator vs producer access separation;
 -   security event/alerting.
