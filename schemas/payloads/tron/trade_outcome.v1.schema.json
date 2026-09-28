@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/trade_outcome.v1.schema.json",
+  "title": "FalconEvent payload: tron.trade_outcome (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.trade_outcome'.",
+  "type": "object",
+  "properties": {
+    "position_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "trade_outcome_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "realised_pnl_decimal": {
+      "type": "string",
+      "pattern": "^-?\\d+(\\.\\d+)?$"
+    },
+    "realised_pnl_numeric": {
+      "type": "number"
+    },
+    "outcome_classification": {
+      "type": "string",
+      "enum": [
+        "WIN",
+        "LOSS",
+        "BREAKEVEN"
+      ]
+    }
+  },
+  "required": [
+    "position_id",
+    "trade_outcome_id",
+    "realised_pnl_decimal",
+    "outcome_classification"
+  ],
+  "additionalProperties": false
+}

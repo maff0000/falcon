@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/health.v1.schema.json",
+  "title": "FalconEvent payload: tron.health (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.health'.",
+  "type": "object",
+  "properties": {
+    "component_health_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "health_status": {
+      "type": "string",
+      "enum": [
+        "HEALTHY",
+        "DEGRADED",
+        "DOWN",
+        "UNKNOWN"
+      ]
+    },
+    "detail": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "component_health_id",
+    "health_status"
+  ],
+  "additionalProperties": false
+}

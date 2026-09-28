@@ -1,0 +1,31 @@
+{
+  "falcon_event_id": "0000000d-0000-4000-8000-00000000000d",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "helios",
+  "producer_component_id": "helios.evaluation_engine",
+  "evidence_family": "helios.strategy_state",
+  "evidence_type": "strategy_lifecycle_state",
+  "evidence_class": "STATE_SNAPSHOT",
+  "produced_at_utc": "2026-09-28T09:20:01Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:20:01Z",
+  "subject_id": "gold_context_trigger",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "helios",
+    "upstream_ref": "helios:helios.strategy_state:13"
+  },
+  "payload_hash": "sha256:0b09f56491f9e21fff03ac63d3fe8b2b50f2749c4ea907ce31e440a133ecf7fd",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "strategy_id": "gold_context_trigger",
+    "strategy_version": "1.0.0",
+    "instrument_id": "XAUUSD",
+    "timeframe": "H1",
+    "state_value": "ARMED",
+    "previous_state_value": "WATCHING"
+  }
+}

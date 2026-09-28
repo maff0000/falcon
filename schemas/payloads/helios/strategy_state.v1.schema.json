@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/helios/strategy_state.v1.schema.json",
+  "title": "FalconEvent payload: helios.strategy_state (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'helios.strategy_state'.",
+  "type": "object",
+  "properties": {
+    "strategy_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "strategy_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timeframe": {
+      "type": "string",
+      "enum": [
+        "M1",
+        "M5",
+        "M15",
+        "M30",
+        "H1",
+        "H4",
+        "D1",
+        "W1"
+      ]
+    },
+    "state_value": {
+      "type": "string",
+      "minLength": 1
+    },
+    "previous_state_value": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "strategy_id",
+    "instrument_id",
+    "state_value"
+  ],
+  "additionalProperties": false
+}

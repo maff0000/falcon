@@ -1,0 +1,33 @@
+{
+  "falcon_event_id": "00000013-0000-4000-8000-000000000013",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "tron",
+  "producer_component_id": "tron.execution_engine",
+  "evidence_family": "tron.order_intent",
+  "evidence_type": "paper_order_intent",
+  "evidence_class": "DOMAIN_DECISION",
+  "produced_at_utc": "2026-09-28T09:25:12Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:25:12Z",
+  "subject_id": "tron-intent-0001",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "tron",
+    "upstream_ref": "tron:tron.order_intent:19"
+  },
+  "payload_hash": "sha256:18a25d352f3c4f44b11bff8ef4b2a9ca7ee5aa7981ff387f32c952b9dd7efe7e",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "local_trigger_id": "tron-local-trig-0001",
+    "order_intent_id": "tron-intent-0001",
+    "instrument_id": "XAUUSD",
+    "direction": "LONG",
+    "quantity_decimal": 0.1,
+    "quantity_numeric": 0.1,
+    "order_type": "MARKET"
+  },
+  "causation_id": "00000012-0000-4000-8000-000000000012"
+}

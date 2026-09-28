@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/falcon-event-envelope/v1/envelope.schema.json",
+  "title": "FalconEvent universal envelope (v1)",
+  "description": "Universal FalconEvent envelope per docs/contracts/FALCON-UNIVERSAL-EVENT-CONTRACT.md. Validated structurally by this schema; family/component/registry cross-checks, the identity law and the typed payload are validated by tests/validator (this schema alone does not express those cross-cutting rules).",
+  "type": "object",
+  "properties": {
+    "falcon_event_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "envelope_version": {
+      "type": "string",
+      "enum": [
+        "v1"
+      ]
+    },
+    "payload_schema_version": {
+      "type": "string",
+      "pattern": "^v[0-9]+$"
+    },
+    "producer_system_id": {
+      "type": "string",
+      "enum": [
+        "falcon",
+        "hermes",
+        "ares",
+        "helios",
+        "tron",
+        "neo"
+      ]
+    },
+    "producer_component_id": {
+      "type": "string"
+    },
+    "producer_instance_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_family": {
+      "type": "string"
+    },
+    "evidence_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_class": {
+      "type": "string",
+      "enum": [
+        "SOURCE_FACT",
+        "NORMALIZED_FACT",
+        "DETERMINISTIC_DERIVATION",
+        "MODEL_ASSESSMENT",
+        "DOMAIN_DECISION",
+        "STATE_SNAPSHOT",
+        "SOURCE_QUALITY",
+        "OPERATIONAL_HEALTH",
+        "EXECUTION"
+      ]
+    },
+    "produced_at_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$"
+    },
+    "occurred_at_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$"
+    },
+    "observed_at_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$"
+    },
+    "available_at_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$"
+    },
+    "effective_from_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$"
+    },
+    "effective_until_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$"
+    },
+    "falcon_ingested_at_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$"
+    },
+    "subject_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0
+    },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"
+    },
+    "causation_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "revision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "revision_sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "supersedes_event_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "provenance_ref": {
+      "type": "object",
+      "properties": {
+        "producer_system_id": {
+          "type": "string"
+        },
+        "upstream_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "producer_system_id",
+        "upstream_ref"
+      ],
+      "additionalProperties": false
+    },
+    "quality_state": {
+      "type": "string",
+      "minLength": 1
+    },
+    "config_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{8,64}$"
+    },
+    "build_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload_hash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "retention_class": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "extended",
+        "short"
+      ]
+    },
+    "sensitivity_class": {
+      "type": "string",
+      "enum": [
+        "public",
+        "internal",
+        "restricted"
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "falcon_event_id",
+    "envelope_version",
+    "payload_schema_version",
+    "producer_system_id",
+    "producer_component_id",
+    "evidence_family",
+    "evidence_type",
+    "evidence_class",
+    "produced_at_utc",
+    "falcon_ingested_at_utc",
+    "subject_id",
+    "instrument_ids",
+    "provenance_ref",
+    "payload_hash",
+    "retention_class",
+    "sensitivity_class",
+    "payload"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,28 @@
+{
+  "falcon_event_id": "00000012-0000-4000-8000-000000000012",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "tron",
+  "producer_component_id": "tron.discovery_service",
+  "evidence_family": "tron.admission_decision",
+  "evidence_type": "trigger_admission_decision",
+  "evidence_class": "DOMAIN_DECISION",
+  "produced_at_utc": "2026-09-28T09:25:11Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:25:11Z",
+  "subject_id": "tron-local-trig-0001",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "tron",
+    "upstream_ref": "tron:tron.admission_decision:18"
+  },
+  "payload_hash": "sha256:18624c2390e46e9951ee1ed2540023aa90f3dc3a73ac808091e7e297f21438e5",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "local_trigger_id": "tron-local-trig-0001",
+    "admission_outcome": "ADMITTED"
+  },
+  "causation_id": "00000011-0000-4000-8000-000000000011"
+}

@@ -1,0 +1,53 @@
+{
+  "falcon_event_id": "00000010-0000-4000-8000-000000000010",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "helios",
+  "producer_component_id": "helios.trigger_signer",
+  "evidence_family": "helios.strategy_trigger",
+  "evidence_type": "entry_trigger",
+  "evidence_class": "DOMAIN_DECISION",
+  "produced_at_utc": "2026-09-28T09:25:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:25:00Z",
+  "subject_id": "gold_context_trigger",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "helios",
+    "upstream_ref": "helios:helios.strategy_trigger:16"
+  },
+  "payload_hash": "sha256:7fd486613e84a50ac0f27e34f4612ef218147a5c71a5383bfd1dd0f9a3d42098",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "trigger_id": "helios-trigger-0001",
+    "evaluation_id": "helios-eval-0001",
+    "strategy_id": "gold_context_trigger",
+    "strategy_version": "1.0.0",
+    "semantic_fingerprint": "sha256:33557cf7b6dadd20c894ce4a6c005754d11ae38c33c044abacf20f46cbdd8e9e",
+    "parameter_set_id": "gold_context_trigger-default",
+    "chain_id": "helios-chain-0001",
+    "instrument_id": "XAUUSD",
+    "direction": "LONG",
+    "action_type": "ENTRY",
+    "timeframe": "H1",
+    "trigger_at_utc": "2026-09-28T09:25:00Z",
+    "valid_from_utc": "2026-09-28T09:25:00Z",
+    "valid_until_utc": "2026-09-28T09:35:00Z",
+    "input_snapshot_id": "helios-snap-0001",
+    "input_snapshot_hash": "sha256:28d93a3eb874b7819a3be65f500e5fdff471da4251fd1dbd050eb03baade3ad4",
+    "reference_price_decimal": "3872.45",
+    "reference_price_numeric": 3872.45,
+    "stop_loss_decimal": "3860.00",
+    "stop_loss_numeric": 3860.0,
+    "take_profit_decimal": "3900.00",
+    "take_profit_numeric": 3900.0,
+    "score_value": 0.82,
+    "score_definition_id": "helios.entry_confidence.v1",
+    "signing_key_id": "DEV-FAKE-SIGNING-KEY-0001",
+    "signature": "DEV-FAKE-SIGNATURE-not-real-crypto-0001"
+  },
+  "causation_id": "xauusd-2026-09-28-morning-session",
+  "correlation_id": "xauusd-2026-09-28-morning-session"
+}

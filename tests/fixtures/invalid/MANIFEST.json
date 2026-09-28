@@ -1,0 +1,55 @@
+{
+  "unknown_producer_system.json": {
+    "check": "structural",
+    "reason": "producer_system_id 'zeus' is not in the registered system list (ZeusV4 is retired; only falcon/hermes/ares/helios/tron/neo are registered)."
+  },
+  "unknown_component.json": {
+    "check": "structural",
+    "reason": "producer_component_id is shaped correctly but was never registered for the hermes system in registry/system_component_registry.v1.json."
+  },
+  "unknown_field.json": {
+    "check": "structural",
+    "reason": "payload carries an unregistered field 'vendor_ui_label' not present in schemas/payloads/hermes/market_fact.v1.schema.json or the field registry \u2014 additionalProperties:false must reject it."
+  },
+  "bad_event_family.json": {
+    "check": "structural",
+    "reason": "ares.regime.nowcast is explicitly reserved-not-live pending independent SQL-first authority proof; it must never validate as a registered family."
+  },
+  "wrong_type.json": {
+    "check": "structural",
+    "reason": "quantity_decimal is a JSON number (0.10) instead of the authoritative decimal-string representation ('0.10') the numeric-precision rule requires for all price/quantity fields."
+  },
+  "naive_timestamp.json": {
+    "check": "structural",
+    "reason": "produced_at_utc has no timezone offset at all (naive datetime); the temporal law requires timezone-aware UTC only."
+  },
+  "non_utc_offset_timestamp.json": {
+    "check": "structural",
+    "reason": "produced_at_utc is timezone-aware but uses a +02:00 offset, not Z/+00:00. FALCON's temporal law is UTC-only, not merely 'timezone-aware' \u2014 a real, non-UTC, tz-aware timestamp must still be rejected."
+  },
+  "missing_required_field.json": {
+    "check": "structural",
+    "reason": "falcon_event_id (the immutable identity field) is missing entirely."
+  },
+  "causation_id_misused_as_correlation.json": {
+    "check": "structural",
+    "reason": "causation_id is given a broad correlation-style grouping label instead of a specific upstream falcon_event_id (UUID shape). correlation_id and causation_id are semantically distinct \u2014 causation_id must reference exactly one causing event."
+  },
+  "bad_supersession_self_reference.json": {
+    "check": "structural",
+    "reason": "supersedes_event_id equals the event's own falcon_event_id \u2014 an event cannot supersede itself; append-preserving revision structure requires a distinct prior event."
+  },
+  "unregistered_score_definition.json": {
+    "check": "structural",
+    "reason": "score_value is present but score_definition_id references a score definition that is not in the registered enum \u2014 a score is never ungoverned."
+  },
+  "payload_field_outside_family.json": {
+    "check": "structural",
+    "reason": "broker_order_id is a real registered field, but it is only registered for TRON order families, not for hermes.market_fact \u2014 using it here violates the field registry's per-field allowed_families scoping even before considering additionalProperties."
+  },
+  "identity_violation_reused_event_id.json": {
+    "check": "identity_law",
+    "paired_with": "hermes_health_heartbeat_a.json",
+    "reason": "Structurally valid alone. INVALID only in combination with tests/fixtures/valid/hermes_health_heartbeat_a.json: it reuses that event's falcon_event_id while carrying a different payload/payload_hash (HEALTHY vs DOWN), which violates the immutable-identity law (payload_hash is integrity data, not identity). Checked via the cross-fixture identity law, not per-file schema validation."
+  }
+}

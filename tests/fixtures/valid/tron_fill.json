@@ -1,0 +1,33 @@
+{
+  "falcon_event_id": "00000016-0000-4000-8000-000000000016",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "tron",
+  "producer_component_id": "tron.execution_engine",
+  "evidence_family": "tron.fill",
+  "evidence_type": "paper_fill",
+  "evidence_class": "EXECUTION",
+  "produced_at_utc": "2026-09-28T09:25:15Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:25:15Z",
+  "subject_id": "tron-fill-0001",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "tron",
+    "upstream_ref": "tron:tron.fill:22"
+  },
+  "payload_hash": "sha256:4bf3a154fa6fb7843a42fe15496b3811d1e6abad0b2839a906a82d680780d352",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "broker_order_id": "broker-ord-778899",
+    "fill_id": "tron-fill-0001",
+    "instrument_id": "XAUUSD",
+    "fill_price_decimal": "3872.60",
+    "fill_price_numeric": 3872.6,
+    "fill_quantity_decimal": "0.10",
+    "fill_quantity_numeric": 0.1
+  },
+  "causation_id": "00000015-0000-4000-8000-000000000015"
+}

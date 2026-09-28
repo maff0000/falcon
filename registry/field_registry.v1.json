@@ -1,0 +1,2825 @@
+{
+  "version": "v1",
+  "law": "Single authority for FALCON-visible field names and types per docs/contracts/FALCON-FIELD-REGISTRY.md. No producer may invent an unregistered field or a synonym for an already-registered concept.",
+  "fields": [
+    {
+      "name": "falcon_event_id",
+      "type": "string",
+      "description": "Globally unique, immutable evidence identity. Stable across producer retry of the same logical evidence emission. NEVER derived solely from payload content \u2014 see payload_hash.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "envelope_version",
+      "type": "string",
+      "description": "Version of the universal FalconEvent envelope contract itself.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": [
+        "v1"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "falcon",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "payload_schema_version",
+      "type": "string",
+      "description": "Version of the registered typed payload schema named by evidence_family/evidence_type.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": "^v[0-9]+$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "producer_system_id",
+      "type": "string",
+      "description": "Registered machine system identity of the publishing producer. Authoritative list: registry/system_component_registry.v1.json.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": [
+        "falcon",
+        "hermes",
+        "ares",
+        "helios",
+        "tron",
+        "neo"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "producer_component_id",
+      "type": "string",
+      "description": "Registered stable component identity of the publishing producer (system.component_name shape). Never a hostname, container name or Graylog stream/index/message id.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "producer_instance_id",
+      "type": "string",
+      "description": "Optional runtime instance identity, separate from the stable component identity (e.g. which replica emitted this event).",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "evidence_family",
+      "type": "string",
+      "description": "Registered event family. Authoritative list: registry/event_family_registry.v1.json.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "evidence_type",
+      "type": "string",
+      "description": "Registered subtype within evidence_family. Exact subtypes are registered per-family (illustrative/placeholder in PID-01 since no live producers exist yet).",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "evidence_class",
+      "type": "string",
+      "description": "Epistemic class of this evidence, independent of which system produced it.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": [
+        "SOURCE_FACT",
+        "NORMALIZED_FACT",
+        "DETERMINISTIC_DERIVATION",
+        "MODEL_ASSESSMENT",
+        "DOMAIN_DECISION",
+        "STATE_SNAPSHOT",
+        "SOURCE_QUALITY",
+        "OPERATIONAL_HEALTH",
+        "EXECUTION"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "produced_at_utc",
+      "type": "string",
+      "description": "UTC instant the producer created this evidence record. Canonical, timezone-aware, UTC-only (Z or +00:00) \u2014 naive/local timestamps are rejected.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "occurred_at_utc",
+      "type": "string",
+      "description": "UTC instant of the real-world occurrence this evidence describes, where applicable.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "observed_at_utc",
+      "type": "string",
+      "description": "UTC instant the producer observed the underlying fact.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "available_at_utc",
+      "type": "string",
+      "description": "UTC instant this evidence first became usable by the producer's own decision logic. Participates in causal eligibility; a retrospective measurement must never appear as contemporaneously knowable.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "effective_from_utc",
+      "type": "string",
+      "description": "UTC instant a state/decision becomes effective.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "effective_until_utc",
+      "type": "string",
+      "description": "UTC instant a state/decision expires or ends.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "falcon_ingested_at_utc",
+      "type": "string",
+      "description": "FALCON-owned ingestion UTC. Never producer-supplied as authority; a producer submitting this field is not itself proof of ingestion \u2014 FALCON assigns it. Fixtures in this PID represent already-accepted evidence (there is no live ingress yet), so this is populated as an ordinary recorded fact here, not as a simulation of a running ingress service.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "falcon",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "subject_id",
+      "type": "string",
+      "description": "Governed subject this evidence is about (instrument, component, market segment, etc., per family semantics).",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "instrument_ids",
+      "type": "array",
+      "description": "Canonical instrument(s) this evidence applies to. May be an empty array for evidence with no instrument applicability (e.g. health).",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "correlation_id",
+      "type": "string",
+      "description": "Logical investigation/thread grouping label. MAY be shared by many unrelated-but-associated events. Deliberately NOT the same shape as causation_id (not a pointer to one specific causing event) so the two cannot be used interchangeably.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "causation_id",
+      "type": "string",
+      "description": "Immediate causal predecessor's falcon_event_id. MUST reference exactly one specific upstream event, never a broad grouping label \u2014 enforced by requiring the falcon_event_id UUID shape, which correlation_id's pattern deliberately does not accept.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "revision_id",
+      "type": "string",
+      "description": "Family-specific revision identity.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "revision_sequence",
+      "type": "integer",
+      "description": "Ordered revision number where meaningful.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "supersedes_event_id",
+      "type": "string",
+      "description": "falcon_event_id of the prior event this one supersedes. Append-preserving: the prior event remains searchable. Must never equal this event's own falcon_event_id.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "provenance_ref",
+      "type": "object",
+      "description": "Governed producer provenance reference. Concrete structured shape chosen for PID-01 (contract only specifies 'string/object'): an object naming the upstream system and an upstream reference id, plus an optional human description. Not a free-form blob.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "quality_state",
+      "type": "string",
+      "description": "Quality/freshness state using family-registered semantics (the vocabulary is defined per-family, not globally, per the field registry law 'registered family semantics').",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "config_digest",
+      "type": "string",
+      "description": "Truth-affecting configuration identity (hex digest).",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": "^[a-f0-9]{8,64}$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "build_id",
+      "type": "string",
+      "description": "Git SHA / build provenance of the producer.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": false,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "payload_hash",
+      "type": "string",
+      "description": "Integrity hash of payload. Integrity data only \u2014 NOT event identity. Two events may legitimately share a payload_hash (e.g. identical heartbeats) while never sharing a falcon_event_id.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "retention_class",
+      "type": "string",
+      "description": "FALCON registry value governing retention. PID-01 has no separate retention registry file, so the governed value-space is this field's registry enum.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": [
+        "standard",
+        "extended",
+        "short"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "falcon",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "sensitivity_class",
+      "type": "string",
+      "description": "FALCON registry value governing access/handling sensitivity. Governed the same way as retention_class (enum on this registry entry).",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": [
+        "public",
+        "internal",
+        "restricted"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "falcon",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "payload",
+      "type": "object",
+      "description": "The registered typed payload for evidence_family/evidence_type. Structurally generic at the envelope level; validated against the specific family schema by the validation pipeline.",
+      "scope": "envelope",
+      "allowed_families": [
+        "*"
+      ],
+      "required_default": true,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "producer",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "instrument_id",
+      "type": "string",
+      "description": "Single canonical instrument this payload concerns (contrast with envelope instrument_ids, which is the broader applicability array).",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.chain_state",
+        "helios.strategy_evaluated",
+        "helios.strategy_state",
+        "helios.strategy_trigger",
+        "hermes.market_fact",
+        "hermes.market_quality",
+        "hermes.market_state",
+        "tron.fill",
+        "tron.order_intent",
+        "tron.order_submitted",
+        "tron.position_state",
+        "tron.trigger_observed"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "timeframe",
+      "type": "string",
+      "description": "Chart/evaluation timeframe.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated",
+        "helios.strategy_state",
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": [
+        "M1",
+        "M5",
+        "M15",
+        "M30",
+        "H1",
+        "H4",
+        "D1",
+        "W1"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "health_status",
+      "type": "string",
+      "description": "Health status of the reporting component.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.health",
+        "hermes.health",
+        "tron.health"
+      ],
+      "required_default": null,
+      "enum": [
+        "HEALTHY",
+        "DEGRADED",
+        "DOWN",
+        "UNKNOWN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "component_health_id",
+      "type": "string",
+      "description": "Deterministic identity of this health observation.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.health",
+        "hermes.health",
+        "tron.health"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "detail",
+      "type": "string",
+      "description": "Optional free-text operator detail. Never used to carry fabricated confidence/provenance.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.health",
+        "hermes.health",
+        "tron.health",
+        "tron.order_update"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "direction",
+      "type": "string",
+      "description": "Trade direction/action polarity.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger",
+        "tron.order_intent"
+      ],
+      "required_default": null,
+      "enum": [
+        "LONG",
+        "SHORT",
+        "FLAT"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "strategy_id",
+      "type": "string",
+      "description": "HELIOS strategy identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.chain_state",
+        "helios.strategy_evaluated",
+        "helios.strategy_state",
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "strategy_version",
+      "type": "string",
+      "description": "HELIOS strategy version.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated",
+        "helios.strategy_state",
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "semantic_fingerprint",
+      "type": "string",
+      "description": "Semantic fingerprint of the strategy definition/parameterisation.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated",
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "parameter_set_id",
+      "type": "string",
+      "description": "Identity of the exact parameter set used.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated",
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "input_snapshot_id",
+      "type": "string",
+      "description": "Identity of the input data snapshot evaluated.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated",
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "input_snapshot_hash",
+      "type": "string",
+      "description": "Integrity hash of the input data snapshot.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated",
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^sha256:[a-f0-9]{64}$",
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "evaluation_id",
+      "type": "string",
+      "description": "Identity of a single HELIOS evaluation cycle.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated",
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "chain_id",
+      "type": "string",
+      "description": "Identity of a HELIOS strategy chain, where applicable.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.chain_state",
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "local_trigger_id",
+      "type": "string",
+      "description": "TRON-local durable trigger identity \u2014 authoritative for TRON-side dedupe.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.admission_decision",
+        "tron.order_intent",
+        "tron.trigger_observed"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "order_intent_id",
+      "type": "string",
+      "description": "TRON order intent identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.execution_quality",
+        "tron.order_intent",
+        "tron.order_submitted"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "broker_order_id",
+      "type": "string",
+      "description": "Broker-assigned order identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.fill",
+        "tron.order_submitted",
+        "tron.order_update"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "position_id",
+      "type": "string",
+      "description": "TRON position identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.exit",
+        "tron.position_state",
+        "tron.protection_state",
+        "tron.trade_outcome"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "score_value",
+      "type": "number",
+      "description": "Governed numeric score. Never a generic ungoverned 'confidence' \u2014 must be paired with score_definition_id.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "score_definition_id",
+      "type": "string",
+      "description": "Identifies what score_value means. Must be a registered definition id (enum on this entry acts as the mini-registry for PID-01).",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": [
+        "helios.entry_confidence.v1",
+        "helios.exit_confidence.v1"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "signing_key_id",
+      "type": "string",
+      "description": "Identity of the signing key. Contract-shaped placeholder only in PID-01 \u2014 no real cryptography (real signing is PID-08).",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "signature",
+      "type": "string",
+      "description": "Signature value. Contract-shaped placeholder only in PID-01 \u2014 no real cryptography (real signing is PID-08).",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "fact_id",
+      "type": "string",
+      "description": "HERMES deterministic identity of this specific market fact record.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_fact"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "derivation_id",
+      "type": "string",
+      "description": "HERMES derivation/configuration identity that produced this fact/state.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_fact",
+        "hermes.market_quality",
+        "hermes.market_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "series_id",
+      "type": "string",
+      "description": "Canonical contract/series identity (e.g. front-month vs continuous).",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_fact"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "value_decimal",
+      "type": "string",
+      "description": "Authoritative decimal-string value.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_fact"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "value_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of value_decimal for search/aggregation only.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_fact"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "unit",
+      "type": "string",
+      "description": "Unit of value_decimal (e.g. USD_per_troy_ounce).",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_fact"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "reference_price_decimal",
+      "type": "string",
+      "description": "Authoritative decimal-string reference price, where applicable.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger",
+        "hermes.market_fact"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "reference_price_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of reference_price_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger",
+        "hermes.market_fact"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "state_id",
+      "type": "string",
+      "description": "HERMES deterministic identity of this market-state record.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "state_value",
+      "type": "string",
+      "description": "Family-governed state label.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_state",
+        "hermes.market_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "previous_state_value",
+      "type": "string",
+      "description": "Prior state label, where a transition is being recorded.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_state",
+        "hermes.market_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "quality_transition_id",
+      "type": "string",
+      "description": "HERMES deterministic identity of this quality transition record.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_quality"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "previous_quality_state",
+      "type": "string",
+      "description": "Freshness/quality state before the transition.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_quality"
+      ],
+      "required_default": null,
+      "enum": [
+        "FRESH",
+        "STALE",
+        "DEGRADED",
+        "UNKNOWN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "new_quality_state",
+      "type": "string",
+      "description": "Freshness/quality state after the transition.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.market_quality"
+      ],
+      "required_default": null,
+      "enum": [
+        "FRESH",
+        "STALE",
+        "DEGRADED",
+        "UNKNOWN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "calendar_event_id",
+      "type": "string",
+      "description": "ARES stable scheduled-event identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.calendar.event_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "event_name",
+      "type": "string",
+      "description": "Human-readable scheduled event name.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.calendar.event_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "scheduled_at_utc",
+      "type": "string",
+      "description": "UTC instant the real-world calendar event is scheduled to occur.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.calendar.event_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "event_state",
+      "type": "string",
+      "description": "Lifecycle state of the scheduled event.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.calendar.event_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "SCHEDULED",
+        "IMMINENT",
+        "RELEASED",
+        "REVISED",
+        "CANCELLED"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "impact_level",
+      "type": "string",
+      "description": "ARES-assessed impact level of the scheduled event.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.calendar.event_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "revision_of_calendar_event_id",
+      "type": "string",
+      "description": "calendar_event_id this revision corrects/updates.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.calendar.event_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "session_id",
+      "type": "string",
+      "description": "ARES market-session identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.market_status.session_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "market_id",
+      "type": "string",
+      "description": "Market/segment this session state concerns.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.market_status.session_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "session_state",
+      "type": "string",
+      "description": "Trading session lifecycle state.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.market_status.session_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "PRE_OPEN",
+        "OPEN",
+        "CLOSING",
+        "CLOSED",
+        "HOLIDAY"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "liquidity_subject_id",
+      "type": "string",
+      "description": "Instrument or market segment this liquidity state concerns.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.liquidity.state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "liquidity_state",
+      "type": "string",
+      "description": "ARES-assessed liquidity condition.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.liquidity.state"
+      ],
+      "required_default": null,
+      "enum": [
+        "NORMAL",
+        "THIN",
+        "STRESSED",
+        "UNKNOWN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "breadth_measure_id",
+      "type": "string",
+      "description": "Identity of the specific USD breadth measure (explicitly not DXY itself \u2014 DXY is a single index, breadth is a broader multi-pair construct).",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.macro_usd.breadth_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "breadth_state",
+      "type": "string",
+      "description": "ARES-assessed USD breadth condition.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.macro_usd.breadth_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "STRENGTHENING",
+        "WEAKENING",
+        "NEUTRAL",
+        "UNKNOWN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "source_id",
+      "type": "string",
+      "description": "ARES upstream source identity whose quality is transitioning.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.source_quality.transition"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "ares_previous_quality_state",
+      "type": "string",
+      "description": "ARES source quality state before the transition.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.source_quality.transition"
+      ],
+      "required_default": null,
+      "enum": [
+        "RELIABLE",
+        "DEGRADED",
+        "UNAVAILABLE",
+        "UNKNOWN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "ares_new_quality_state",
+      "type": "string",
+      "description": "ARES source quality state after the transition.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.source_quality.transition"
+      ],
+      "required_default": null,
+      "enum": [
+        "RELIABLE",
+        "DEGRADED",
+        "UNAVAILABLE",
+        "UNKNOWN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "decision_id",
+      "type": "string",
+      "description": "ARES publication decision identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.publication.decision"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "decision_type",
+      "type": "string",
+      "description": "Whether this is a research or operational publication decision.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.publication.decision"
+      ],
+      "required_default": null,
+      "enum": [
+        "RESEARCH_PUBLISH",
+        "OPERATIONAL_HOLD"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "decision_outcome",
+      "type": "string",
+      "description": "Outcome of the publication decision.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.publication.decision"
+      ],
+      "required_default": null,
+      "enum": [
+        "PUBLISHED",
+        "WITHHELD",
+        "DEFERRED"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "rationale_ref",
+      "type": "string",
+      "description": "Reference/pointer to the rationale record. Never a fabricated free-text justification.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.publication.decision"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "state_before",
+      "type": "string",
+      "description": "HELIOS evaluation state before this cycle.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "state_after",
+      "type": "string",
+      "description": "HELIOS evaluation state after this cycle.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "conditions_satisfied",
+      "type": "array",
+      "description": "List of named strategy conditions satisfied this cycle.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "conditions_failed",
+      "type": "array",
+      "description": "List of named strategy conditions that failed this cycle (declines/near-misses must be explainable).",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_evaluated"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "chain_state",
+      "type": "string",
+      "description": "Lifecycle state of a HELIOS strategy chain.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.chain_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "PENDING",
+        "ACTIVE",
+        "COMPLETED",
+        "ABORTED"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "trigger_id",
+      "type": "string",
+      "description": "HELIOS trigger identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "action_type",
+      "type": "string",
+      "description": "Semantic action type of the trigger.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": [
+        "ENTRY",
+        "EXIT",
+        "ADJUST"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "trigger_at_utc",
+      "type": "string",
+      "description": "UTC instant the trigger logically fired. Carried inside payload (not only the envelope) because it is part of the content that HELIOS signs.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "valid_from_utc",
+      "type": "string",
+      "description": "UTC instant from which this trigger is valid for TRON discovery.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "valid_until_utc",
+      "type": "string",
+      "description": "UTC instant after which this trigger is no longer valid for TRON discovery.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$",
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "stop_loss_decimal",
+      "type": "string",
+      "description": "Semantic stop-loss level HELIOS defines for the strategy, if any. Not a broker order \u2014 TRON owns broker mechanics.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "stop_loss_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of stop_loss_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "take_profit_decimal",
+      "type": "string",
+      "description": "Semantic take-profit level HELIOS defines for the strategy, if any.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "take_profit_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of take_profit_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "invalidation_decimal",
+      "type": "string",
+      "description": "Semantic invalidation level for the trigger, if the strategy defines one.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "invalidation_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of invalidation_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "target_decimal",
+      "type": "string",
+      "description": "Semantic target level for the trigger, if the strategy defines one.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "target_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of target_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "helios.strategy_trigger"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "helios",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "source_trigger_id",
+      "type": "string",
+      "description": "The upstream HELIOS trigger_id this TRON observation refers to.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.trigger_observed"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "signature_status",
+      "type": "string",
+      "description": "Result of TRON's independent verification of the HELIOS trigger signature.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.trigger_observed"
+      ],
+      "required_default": null,
+      "enum": [
+        "VALID",
+        "INVALID",
+        "EXPIRED_KEY",
+        "UNKNOWN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "admission_outcome",
+      "type": "string",
+      "description": "TRON's admission decision outcome for an observed trigger.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.admission_decision"
+      ],
+      "required_default": null,
+      "enum": [
+        "ADMITTED",
+        "REJECTED"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "rejection_reason",
+      "type": "string",
+      "description": "Terminal reason code when admission_outcome is REJECTED (or the trigger otherwise never executes).",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.admission_decision"
+      ],
+      "required_default": null,
+      "enum": [
+        "DUPLICATE",
+        "EXPIRED",
+        "INVALID_SIGNATURE",
+        "UNSERVICEABLE",
+        "CHECK_FAILED",
+        "OTHER_REJECTED"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "quantity_decimal",
+      "type": "string",
+      "description": "Authoritative decimal-string intended order quantity.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.order_intent"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "quantity_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of quantity_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.order_intent"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "order_type",
+      "type": "string",
+      "description": "Broker order type TRON selected.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.order_intent"
+      ],
+      "required_default": null,
+      "enum": [
+        "MARKET",
+        "LIMIT",
+        "STOP"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "submitted_quantity_decimal",
+      "type": "string",
+      "description": "Authoritative decimal-string quantity actually submitted to the broker.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.order_submitted"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "submitted_quantity_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of submitted_quantity_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.order_submitted"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "update_type",
+      "type": "string",
+      "description": "Nature of this broker order lifecycle update.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.order_update"
+      ],
+      "required_default": null,
+      "enum": [
+        "ACKNOWLEDGED",
+        "PARTIALLY_FILLED",
+        "CANCELLED",
+        "REJECTED"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "fill_id",
+      "type": "string",
+      "description": "Broker fill identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.fill"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "fill_price_decimal",
+      "type": "string",
+      "description": "Authoritative decimal-string fill price.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.fill"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "fill_price_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of fill_price_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.fill"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "fill_quantity_decimal",
+      "type": "string",
+      "description": "Authoritative decimal-string filled quantity.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.fill"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "fill_quantity_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of fill_quantity_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.fill"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "position_state_value",
+      "type": "string",
+      "description": "TRON position lifecycle state.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.position_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "OPEN",
+        "FLAT",
+        "CLOSED"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "net_quantity_decimal",
+      "type": "string",
+      "description": "Authoritative decimal-string net position quantity.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.position_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "net_quantity_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of net_quantity_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.position_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "protection_type",
+      "type": "string",
+      "description": "Type of broker-native position protection.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.protection_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "STOP_LOSS",
+        "TAKE_PROFIT",
+        "TRAILING_STOP"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "protection_level_decimal",
+      "type": "string",
+      "description": "Authoritative decimal-string protection level.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.protection_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "protection_level_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of protection_level_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.protection_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "protection_status",
+      "type": "string",
+      "description": "Current status of this protection instruction.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.protection_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "ACTIVE",
+        "TRIGGERED",
+        "CANCELLED"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "exit_id",
+      "type": "string",
+      "description": "TRON position exit identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.exit"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "exit_reason",
+      "type": "string",
+      "description": "Reason this position was exited.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.exit"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "exit_price_decimal",
+      "type": "string",
+      "description": "Authoritative decimal-string exit price.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.exit"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "exit_price_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of exit_price_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.exit"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "trade_outcome_id",
+      "type": "string",
+      "description": "TRON trade outcome record identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.trade_outcome"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "realised_pnl_decimal",
+      "type": "string",
+      "description": "Authoritative signed decimal-string realised P&L.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.trade_outcome"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^-?\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "realised_pnl_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of realised_pnl_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.trade_outcome"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "outcome_classification",
+      "type": "string",
+      "description": "Coarse win/loss/breakeven classification of the trade outcome.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.trade_outcome"
+      ],
+      "required_default": null,
+      "enum": [
+        "WIN",
+        "LOSS",
+        "BREAKEVEN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "slippage_decimal",
+      "type": "string",
+      "description": "Authoritative signed decimal-string execution slippage.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.execution_quality"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": "^-?\\d+(\\.\\d+)?$",
+      "unit_precision": "decimal string, unbounded precision, '.' separator, no thousands separator",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "slippage_numeric",
+      "type": "number",
+      "description": "Optional non-authoritative numeric mirror of slippage_decimal.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.execution_quality"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "latency_ms",
+      "type": "integer",
+      "description": "Measured execution latency in milliseconds.",
+      "scope": "payload",
+      "allowed_families": [
+        "tron.execution_quality"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": "integer milliseconds",
+      "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    }
+  ]
+}

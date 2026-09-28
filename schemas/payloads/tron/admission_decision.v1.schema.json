@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/admission_decision.v1.schema.json",
+  "title": "FalconEvent payload: tron.admission_decision (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.admission_decision'.",
+  "type": "object",
+  "properties": {
+    "local_trigger_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "admission_outcome": {
+      "type": "string",
+      "enum": [
+        "ADMITTED",
+        "REJECTED"
+      ]
+    },
+    "rejection_reason": {
+      "type": "string",
+      "enum": [
+        "DUPLICATE",
+        "EXPIRED",
+        "INVALID_SIGNATURE",
+        "UNSERVICEABLE",
+        "CHECK_FAILED",
+        "OTHER_REJECTED"
+      ]
+    }
+  },
+  "required": [
+    "local_trigger_id",
+    "admission_outcome"
+  ],
+  "additionalProperties": false
+}

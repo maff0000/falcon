@@ -26,3 +26,7 @@
 18. UTC-only canonical time.
 19. Point-in-time knowability and append-preserving revisions are
     mandatory.
+20. Every Docker/container resource owned specifically by FALCON carries
+    the `-falcon` suffix (FF-CONTAINER-01, see
+    docs/architecture/03-CONTAINER-NAMING.md) — binding acceptance
+    criterion from PID-02 onward.

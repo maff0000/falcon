@@ -1,0 +1,50 @@
+{
+  "$schema_note": "Machine-readable per docs/contracts/FALCON-SYSTEM-COMPONENT-REGISTRY.md",
+  "version": "v1",
+  "systems": [
+    "falcon",
+    "hermes",
+    "ares",
+    "helios",
+    "tron",
+    "neo"
+  ],
+  "components": {
+    "falcon": [
+      "falcon.ingress_gateway"
+    ],
+    "hermes": [
+      "hermes.market_data_service",
+      "hermes.quality_monitor"
+    ],
+    "ares": [
+      "ares.calendar_service",
+      "ares.market_status_service",
+      "ares.liquidity_service",
+      "ares.macro_usd_service",
+      "ares.source_quality_service",
+      "ares.publication_service"
+    ],
+    "helios": [
+      "helios.evaluation_engine",
+      "helios.trigger_signer"
+    ],
+    "tron": [
+      "tron.execution_engine",
+      "tron.discovery_service"
+    ],
+    "neo": [
+      "neo.research_reader"
+    ]
+  },
+  "component_naming_rule": {
+    "shape_pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$",
+    "shape_description": "system.component_name \u2014 stable semantic identity, lowercase, dot-separated.",
+    "prohibited": [
+      "ambiguous free-text names",
+      "Graylog stream/index/message ids as producer identity",
+      "hostnames as the sole semantic component identity",
+      "raw Docker container names/ids (e.g. hex-suffixed or compose-numbered names)"
+    ]
+  }
+}

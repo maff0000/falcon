@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/ares/calendar_event_state.v1.schema.json",
+  "title": "FalconEvent payload: ares.calendar.event_state (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'ares.calendar.event_state'.",
+  "type": "object",
+  "properties": {
+    "calendar_event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scheduled_at_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?(Z|\\+00:00)$"
+    },
+    "event_state": {
+      "type": "string",
+      "enum": [
+        "SCHEDULED",
+        "IMMINENT",
+        "RELEASED",
+        "REVISED",
+        "CANCELLED"
+      ]
+    },
+    "impact_level": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ]
+    },
+    "revision_of_calendar_event_id": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "calendar_event_id",
+    "event_name",
+    "scheduled_at_utc",
+    "event_state"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/order_submitted.v1.schema.json",
+  "title": "FalconEvent payload: tron.order_submitted (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.order_submitted'.",
+  "type": "object",
+  "properties": {
+    "order_intent_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "broker_order_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "submitted_quantity_decimal": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?$"
+    },
+    "submitted_quantity_numeric": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "order_intent_id",
+    "broker_order_id",
+    "instrument_id",
+    "submitted_quantity_decimal"
+  ],
+  "additionalProperties": false
+}

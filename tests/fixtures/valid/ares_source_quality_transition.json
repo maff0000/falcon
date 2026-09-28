@@ -1,0 +1,26 @@
+{
+  "falcon_event_id": "0000000a-0000-4000-8000-00000000000a",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "ares",
+  "producer_component_id": "ares.source_quality_service",
+  "evidence_family": "ares.source_quality.transition",
+  "evidence_type": "ares_source_quality_transition",
+  "evidence_class": "SOURCE_QUALITY",
+  "produced_at_utc": "2026-09-28T09:12:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:12:00Z",
+  "subject_id": "ares-source-econ-calendar-feed-1",
+  "instrument_ids": [],
+  "provenance_ref": {
+    "producer_system_id": "ares",
+    "upstream_ref": "ares:ares.source_quality.transition:10"
+  },
+  "payload_hash": "sha256:869204d4ac5eb04a34617542318e1f8316aa4e1174235b350ae9f00d303aa67a",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "source_id": "ares-source-econ-calendar-feed-1",
+    "ares_previous_quality_state": "RELIABLE",
+    "ares_new_quality_state": "DEGRADED"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "falcon_event_id": "0000000f-0000-4000-8000-00000000000f",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "helios",
+  "producer_component_id": "helios.evaluation_engine",
+  "evidence_family": "helios.health",
+  "evidence_type": "evaluation_engine_health",
+  "evidence_class": "OPERATIONAL_HEALTH",
+  "produced_at_utc": "2026-09-28T09:21:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:21:00Z",
+  "subject_id": "helios.evaluation_engine",
+  "instrument_ids": [],
+  "provenance_ref": {
+    "producer_system_id": "helios",
+    "upstream_ref": "helios:helios.health:15"
+  },
+  "payload_hash": "sha256:0ad0629cbcebb35c71d106e69d153a29b6cafc35016fbd7a3e5a7c2344524a91",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "component_health_id": "helios-health-eval-01",
+    "health_status": "HEALTHY"
+  }
+}

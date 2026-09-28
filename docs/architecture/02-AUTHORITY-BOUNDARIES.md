@@ -40,4 +40,4 @@ retroactively rewrite FALCON evidence.
 
 ## Legacy exclusion
 
-and historical semantics are not contract inputs.
+Only canonical Dockerised ARES participates in FALCON. Any legacy or non-canonical ARES implementation (including the prior tradingRisk-fleet ARES) and historical semantics are not contract inputs.

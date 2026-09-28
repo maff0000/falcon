@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/position_state.v1.schema.json",
+  "title": "FalconEvent payload: tron.position_state (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.position_state'.",
+  "type": "object",
+  "properties": {
+    "position_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "position_state_value": {
+      "type": "string",
+      "enum": [
+        "OPEN",
+        "FLAT",
+        "CLOSED"
+      ]
+    },
+    "net_quantity_decimal": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?$"
+    },
+    "net_quantity_numeric": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "position_id",
+    "instrument_id",
+    "position_state_value",
+    "net_quantity_decimal"
+  ],
+  "additionalProperties": false
+}

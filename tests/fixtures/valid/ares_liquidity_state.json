@@ -1,0 +1,27 @@
+{
+  "falcon_event_id": "00000008-0000-4000-8000-000000000008",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "ares",
+  "producer_component_id": "ares.liquidity_service",
+  "evidence_family": "ares.liquidity.state",
+  "evidence_type": "instrument_liquidity_state",
+  "evidence_class": "STATE_SNAPSHOT",
+  "produced_at_utc": "2026-09-28T09:05:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:05:00Z",
+  "subject_id": "XAUUSD",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "ares",
+    "upstream_ref": "ares:ares.liquidity.state:8"
+  },
+  "payload_hash": "sha256:386e251efd5302e6c2a46c42bacf18bed2d11df0bcd97c6ad17836d43aea0579",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "liquidity_subject_id": "XAUUSD",
+    "liquidity_state": "NORMAL"
+  }
+}

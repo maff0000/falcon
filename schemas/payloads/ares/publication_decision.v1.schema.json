@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/ares/publication_decision.v1.schema.json",
+  "title": "FalconEvent payload: ares.publication.decision (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'ares.publication.decision'.",
+  "type": "object",
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decision_type": {
+      "type": "string",
+      "enum": [
+        "RESEARCH_PUBLISH",
+        "OPERATIONAL_HOLD"
+      ]
+    },
+    "decision_outcome": {
+      "type": "string",
+      "enum": [
+        "PUBLISHED",
+        "WITHHELD",
+        "DEFERRED"
+      ]
+    },
+    "rationale_ref": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "decision_id",
+    "decision_type",
+    "decision_outcome"
+  ],
+  "additionalProperties": false
+}

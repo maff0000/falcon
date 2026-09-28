@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/ares/liquidity_state.v1.schema.json",
+  "title": "FalconEvent payload: ares.liquidity.state (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'ares.liquidity.state'.",
+  "type": "object",
+  "properties": {
+    "liquidity_subject_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "liquidity_state": {
+      "type": "string",
+      "enum": [
+        "NORMAL",
+        "THIN",
+        "STRESSED",
+        "UNKNOWN"
+      ]
+    }
+  },
+  "required": [
+    "liquidity_subject_id",
+    "liquidity_state"
+  ],
+  "additionalProperties": false
+}

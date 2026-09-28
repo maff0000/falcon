@@ -1,0 +1,34 @@
+{
+  "falcon_event_id": "00000001-0000-4000-8000-000000000001",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "hermes",
+  "producer_component_id": "hermes.market_data_service",
+  "evidence_family": "hermes.market_fact",
+  "evidence_type": "gold_spot_price",
+  "evidence_class": "SOURCE_FACT",
+  "produced_at_utc": "2026-09-28T09:00:00+02:00",
+  "falcon_ingested_at_utc": "2026-09-28T08:00:00Z",
+  "subject_id": "XAUUSD",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "hermes",
+    "upstream_ref": "hermes:hermes.market_fact:1"
+  },
+  "payload_hash": "sha256:077e14291d48a6c8a3295a3384642a1b6f17b23a2f663f3666ed4e7259008bc1",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "fact_id": "hermes-fact-xauusd-0001",
+    "derivation_id": "hermes-deriv-spot-v3",
+    "instrument_id": "XAUUSD",
+    "series_id": "XAUUSD.SPOT",
+    "value_decimal": "3872.45",
+    "value_numeric": 3872.45,
+    "unit": "USD_per_troy_ounce"
+  },
+  "observed_at_utc": "2026-09-28T07:59:58Z",
+  "available_at_utc": "2026-09-28T08:00:00Z"
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/ares/market_status_session_state.v1.schema.json",
+  "title": "FalconEvent payload: ares.market_status.session_state (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'ares.market_status.session_state'.",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "market_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "session_state": {
+      "type": "string",
+      "enum": [
+        "PRE_OPEN",
+        "OPEN",
+        "CLOSING",
+        "CLOSED",
+        "HOLIDAY"
+      ]
+    }
+  },
+  "required": [
+    "session_id",
+    "market_id",
+    "session_state"
+  ],
+  "additionalProperties": false
+}

@@ -8,6 +8,32 @@
 **Independent assurance:** R2D2\
 **Infrastructure / operations:** HELM
 
+## Repository identity — read before any FALCON work
+
+The canonical FALCON identity triplet is:
+
+```text
+DEV HOST:  dell-debian
+DEV PATH:  /srv/falcon
+GITHUB:    maff0000/falcon
+```
+
+**There is an unrelated, older repository at the identical-looking path
+`/srv/falcon` on Trinity.** That path there holds `maff0000/trading-falcon`
+— a different, legacy implementation with its own application code,
+migrations and history. It is not this project and must not be touched
+during FALCON work.
+
+Never infer repository identity from the path `/srv/falcon` alone — the
+same path means two different projects on two different hosts. Before any
+FALCON action, verify all three:
+
+```bash
+hostname            # must be dell-debian
+git remote -v        # must be https://github.com/maff0000/falcon.git
+git rev-parse HEAD   # compare against the known canonical SHA
+```
+
 FALCON is THE GOAL's canonical trading-evidence, correlation, search and
 operational-observability plane. Graylog is the principal implementation
 technology and technical GUI, but Graylog is infrastructure behind
@@ -34,6 +60,7 @@ admission, execution, broker, fill, position and outcome truth. -
 operational-observability truth. - **NEO** --- retrospective
 research/review consumer.
 
+Legacy or non-canonical ARES implementations (including the prior tradingRisk-fleet ARES) do not
 define FALCON contracts, and should be retired separately as soon as
 remaining dependencies are safely removed.
 

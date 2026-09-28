@@ -112,3 +112,28 @@ jobs:
         run: |
           echo "No FALCON application code exists yet — PID-00 is documentation/foundation only."
           echo "Later PIDs (schemas, registry, ingress, integrations) will add pytest / contract / integration / security suites as jobs here."
+
+  contract-registry-foundation:
+    name: PID-01 contract/registry validation (schemas, registries, fixtures)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run FALCON contract/registry validator test suite
+        run: |
+          set -euo pipefail
+          echo "Validator is stdlib-only (no jsonschema/pip dependency) — see"
+          echo "tests/validator/__init__.py for rationale. No 'pip install' step"
+          echo "is required to run this suite."
+          python3 -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Run FALCON validator CLI report against all fixtures
+        run: |
+          set -euo pipefail
+          python3 -m tests.validator.cli

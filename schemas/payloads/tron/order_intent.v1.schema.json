@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/order_intent.v1.schema.json",
+  "title": "FalconEvent payload: tron.order_intent (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.order_intent'.",
+  "type": "object",
+  "properties": {
+    "local_trigger_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "order_intent_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "LONG",
+        "SHORT",
+        "FLAT"
+      ]
+    },
+    "quantity_decimal": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?$"
+    },
+    "quantity_numeric": {
+      "type": "number"
+    },
+    "order_type": {
+      "type": "string",
+      "enum": [
+        "MARKET",
+        "LIMIT",
+        "STOP"
+      ]
+    }
+  },
+  "required": [
+    "local_trigger_id",
+    "order_intent_id",
+    "instrument_id",
+    "direction",
+    "quantity_decimal",
+    "order_type"
+  ],
+  "additionalProperties": false
+}

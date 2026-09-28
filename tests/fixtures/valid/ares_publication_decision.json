@@ -1,0 +1,29 @@
+{
+  "falcon_event_id": "0000000b-0000-4000-8000-00000000000b",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "ares",
+  "producer_component_id": "ares.publication_service",
+  "evidence_family": "ares.publication.decision",
+  "evidence_type": "research_publication_decision",
+  "evidence_class": "DOMAIN_DECISION",
+  "produced_at_utc": "2026-09-28T09:15:00Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:15:00Z",
+  "subject_id": "ares-research-note-2026-09-28-001",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "ares",
+    "upstream_ref": "ares:ares.publication.decision:11"
+  },
+  "payload_hash": "sha256:48d92c83e3db29dfca55052908038058cdd5246be1edca34498bbe2c19a8880b",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "decision_id": "ares-pubdec-0001",
+    "decision_type": "RESEARCH_PUBLISH",
+    "decision_outcome": "PUBLISHED",
+    "rationale_ref": "ares-research-note-2026-09-28-001"
+  }
+}

@@ -1,0 +1,437 @@
+{
+  "version": "v1",
+  "live_families": [
+    {
+      "family": "hermes.market_fact",
+      "system": "hermes",
+      "status": "live",
+      "registered_types": [
+        "gold_spot_price",
+        "index_level_snapshot"
+      ],
+      "schema_file": "payloads/hermes/market_fact.v1.schema.json",
+      "required_payload_fields": [
+        "fact_id",
+        "derivation_id",
+        "instrument_id",
+        "series_id",
+        "value_decimal",
+        "unit"
+      ]
+    },
+    {
+      "family": "hermes.market_state",
+      "system": "hermes",
+      "status": "live",
+      "registered_types": [
+        "session_liquidity_state"
+      ],
+      "schema_file": "payloads/hermes/market_state.v1.schema.json",
+      "required_payload_fields": [
+        "state_id",
+        "derivation_id",
+        "instrument_id",
+        "state_value"
+      ]
+    },
+    {
+      "family": "hermes.market_quality",
+      "system": "hermes",
+      "status": "live",
+      "registered_types": [
+        "feed_freshness_transition"
+      ],
+      "schema_file": "payloads/hermes/market_quality.v1.schema.json",
+      "required_payload_fields": [
+        "quality_transition_id",
+        "derivation_id",
+        "instrument_id",
+        "previous_quality_state",
+        "new_quality_state"
+      ]
+    },
+    {
+      "family": "hermes.health",
+      "system": "hermes",
+      "status": "live",
+      "registered_types": [
+        "feed_service_health"
+      ],
+      "schema_file": "payloads/hermes/health.v1.schema.json",
+      "required_payload_fields": [
+        "component_health_id",
+        "health_status"
+      ]
+    },
+    {
+      "family": "ares.calendar.event_state",
+      "system": "ares",
+      "status": "live",
+      "registered_types": [
+        "scheduled_macro_release"
+      ],
+      "schema_file": "payloads/ares/calendar_event_state.v1.schema.json",
+      "required_payload_fields": [
+        "calendar_event_id",
+        "event_name",
+        "scheduled_at_utc",
+        "event_state"
+      ]
+    },
+    {
+      "family": "ares.market_status.session_state",
+      "system": "ares",
+      "status": "live",
+      "registered_types": [
+        "fx_session_state"
+      ],
+      "schema_file": "payloads/ares/market_status_session_state.v1.schema.json",
+      "required_payload_fields": [
+        "session_id",
+        "market_id",
+        "session_state"
+      ]
+    },
+    {
+      "family": "ares.liquidity.state",
+      "system": "ares",
+      "status": "live",
+      "registered_types": [
+        "instrument_liquidity_state"
+      ],
+      "schema_file": "payloads/ares/liquidity_state.v1.schema.json",
+      "required_payload_fields": [
+        "liquidity_subject_id",
+        "liquidity_state"
+      ]
+    },
+    {
+      "family": "ares.macro_usd.breadth_state",
+      "system": "ares",
+      "status": "live",
+      "registered_types": [
+        "usd_breadth_snapshot"
+      ],
+      "schema_file": "payloads/ares/macro_usd_breadth_state.v1.schema.json",
+      "required_payload_fields": [
+        "breadth_measure_id",
+        "breadth_state"
+      ]
+    },
+    {
+      "family": "ares.source_quality.transition",
+      "system": "ares",
+      "status": "live",
+      "registered_types": [
+        "ares_source_quality_transition"
+      ],
+      "schema_file": "payloads/ares/source_quality_transition.v1.schema.json",
+      "required_payload_fields": [
+        "source_id",
+        "ares_previous_quality_state",
+        "ares_new_quality_state"
+      ]
+    },
+    {
+      "family": "ares.publication.decision",
+      "system": "ares",
+      "status": "live",
+      "registered_types": [
+        "research_publication_decision"
+      ],
+      "schema_file": "payloads/ares/publication_decision.v1.schema.json",
+      "required_payload_fields": [
+        "decision_id",
+        "decision_type",
+        "decision_outcome"
+      ]
+    },
+    {
+      "family": "helios.strategy_evaluated",
+      "system": "helios",
+      "status": "live",
+      "registered_types": [
+        "strategy_evaluation_cycle"
+      ],
+      "schema_file": "payloads/helios/strategy_evaluated.v1.schema.json",
+      "required_payload_fields": [
+        "evaluation_id",
+        "strategy_id",
+        "strategy_version",
+        "semantic_fingerprint",
+        "parameter_set_id",
+        "input_snapshot_id",
+        "input_snapshot_hash",
+        "instrument_id",
+        "timeframe",
+        "state_before",
+        "state_after",
+        "conditions_satisfied",
+        "conditions_failed"
+      ]
+    },
+    {
+      "family": "helios.strategy_state",
+      "system": "helios",
+      "status": "live",
+      "registered_types": [
+        "strategy_lifecycle_state"
+      ],
+      "schema_file": "payloads/helios/strategy_state.v1.schema.json",
+      "required_payload_fields": [
+        "strategy_id",
+        "instrument_id",
+        "state_value"
+      ]
+    },
+    {
+      "family": "helios.chain_state",
+      "system": "helios",
+      "status": "live",
+      "registered_types": [
+        "strategy_chain_state"
+      ],
+      "schema_file": "payloads/helios/chain_state.v1.schema.json",
+      "required_payload_fields": [
+        "chain_id",
+        "chain_state"
+      ]
+    },
+    {
+      "family": "helios.strategy_trigger",
+      "system": "helios",
+      "status": "live",
+      "registered_types": [
+        "entry_trigger",
+        "exit_trigger"
+      ],
+      "schema_file": "payloads/helios/strategy_trigger.v1.schema.json",
+      "required_payload_fields": [
+        "trigger_id",
+        "evaluation_id",
+        "strategy_id",
+        "strategy_version",
+        "semantic_fingerprint",
+        "parameter_set_id",
+        "instrument_id",
+        "direction",
+        "action_type",
+        "timeframe",
+        "trigger_at_utc",
+        "valid_from_utc",
+        "valid_until_utc",
+        "input_snapshot_id",
+        "input_snapshot_hash",
+        "reference_price_decimal",
+        "signing_key_id",
+        "signature"
+      ]
+    },
+    {
+      "family": "helios.health",
+      "system": "helios",
+      "status": "live",
+      "registered_types": [
+        "evaluation_engine_health"
+      ],
+      "schema_file": "payloads/helios/health.v1.schema.json",
+      "required_payload_fields": [
+        "component_health_id",
+        "health_status"
+      ]
+    },
+    {
+      "family": "tron.trigger_observed",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "helios_trigger_observed"
+      ],
+      "schema_file": "payloads/tron/trigger_observed.v1.schema.json",
+      "required_payload_fields": [
+        "local_trigger_id",
+        "source_trigger_id",
+        "instrument_id",
+        "signature_status"
+      ]
+    },
+    {
+      "family": "tron.admission_decision",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "trigger_admission_decision"
+      ],
+      "schema_file": "payloads/tron/admission_decision.v1.schema.json",
+      "required_payload_fields": [
+        "local_trigger_id",
+        "admission_outcome"
+      ]
+    },
+    {
+      "family": "tron.order_intent",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "paper_order_intent"
+      ],
+      "schema_file": "payloads/tron/order_intent.v1.schema.json",
+      "required_payload_fields": [
+        "local_trigger_id",
+        "order_intent_id",
+        "instrument_id",
+        "direction",
+        "quantity_decimal",
+        "order_type"
+      ]
+    },
+    {
+      "family": "tron.order_submitted",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "paper_order_submitted"
+      ],
+      "schema_file": "payloads/tron/order_submitted.v1.schema.json",
+      "required_payload_fields": [
+        "order_intent_id",
+        "broker_order_id",
+        "instrument_id",
+        "submitted_quantity_decimal"
+      ]
+    },
+    {
+      "family": "tron.order_update",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "broker_order_update"
+      ],
+      "schema_file": "payloads/tron/order_update.v1.schema.json",
+      "required_payload_fields": [
+        "broker_order_id",
+        "update_type"
+      ]
+    },
+    {
+      "family": "tron.fill",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "paper_fill"
+      ],
+      "schema_file": "payloads/tron/fill.v1.schema.json",
+      "required_payload_fields": [
+        "broker_order_id",
+        "fill_id",
+        "instrument_id",
+        "fill_price_decimal",
+        "fill_quantity_decimal"
+      ]
+    },
+    {
+      "family": "tron.position_state",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "paper_position_state"
+      ],
+      "schema_file": "payloads/tron/position_state.v1.schema.json",
+      "required_payload_fields": [
+        "position_id",
+        "instrument_id",
+        "position_state_value",
+        "net_quantity_decimal"
+      ]
+    },
+    {
+      "family": "tron.protection_state",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "paper_protection_state"
+      ],
+      "schema_file": "payloads/tron/protection_state.v1.schema.json",
+      "required_payload_fields": [
+        "position_id",
+        "protection_type",
+        "protection_level_decimal",
+        "protection_status"
+      ]
+    },
+    {
+      "family": "tron.exit",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "paper_position_exit"
+      ],
+      "schema_file": "payloads/tron/exit.v1.schema.json",
+      "required_payload_fields": [
+        "position_id",
+        "exit_id",
+        "exit_reason",
+        "exit_price_decimal"
+      ]
+    },
+    {
+      "family": "tron.trade_outcome",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "paper_trade_outcome"
+      ],
+      "schema_file": "payloads/tron/trade_outcome.v1.schema.json",
+      "required_payload_fields": [
+        "position_id",
+        "trade_outcome_id",
+        "realised_pnl_decimal",
+        "outcome_classification"
+      ]
+    },
+    {
+      "family": "tron.execution_quality",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "paper_execution_quality"
+      ],
+      "schema_file": "payloads/tron/execution_quality.v1.schema.json",
+      "required_payload_fields": [
+        "order_intent_id",
+        "slippage_decimal",
+        "latency_ms"
+      ]
+    },
+    {
+      "family": "tron.health",
+      "system": "tron",
+      "status": "live",
+      "registered_types": [
+        "execution_engine_health"
+      ],
+      "schema_file": "payloads/tron/health.v1.schema.json",
+      "required_payload_fields": [
+        "component_health_id",
+        "health_status"
+      ]
+    }
+  ],
+  "reserved_not_live": [
+    "ares.regime.nowcast",
+    "ares.unscheduled_news",
+    "ares.model_market_assessment",
+    "ares.mandatory_restriction_veto",
+    "ares.calibrated_risk_score"
+  ],
+  "reserved_not_live_note": "These are explicitly NOT registered as live families in PID-01. Registering them would manufacture a producer capability that does not exist yet (per docs/contracts/FALCON-EVENT-FAMILY-REGISTRY.md and docs/contracts/ARES-FALCON-CONTRACT.md). ares.regime.nowcast specifically is pending independent SQL-first authority proof.",
+  "registration_gate": [
+    "schema is versioned",
+    "fields are registered",
+    "producer/component is registered",
+    "authority class is explicit",
+    "retention/sensitivity are assigned",
+    "sample fixture validates",
+    "ingress tests pass (out of PID-01 scope \u2014 offline validation only)"
+  ]
+}

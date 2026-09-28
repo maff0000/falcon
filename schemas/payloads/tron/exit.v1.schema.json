@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/tron/exit.v1.schema.json",
+  "title": "FalconEvent payload: tron.exit (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'tron.exit'.",
+  "type": "object",
+  "properties": {
+    "position_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exit_reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exit_price_decimal": {
+      "type": "string",
+      "pattern": "^\\d+(\\.\\d+)?$"
+    },
+    "exit_price_numeric": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "position_id",
+    "exit_id",
+    "exit_reason",
+    "exit_price_decimal"
+  ],
+  "additionalProperties": false
+}

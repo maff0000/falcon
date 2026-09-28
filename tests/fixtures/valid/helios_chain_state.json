@@ -1,0 +1,29 @@
+{
+  "falcon_event_id": "0000000e-0000-4000-8000-00000000000e",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "helios",
+  "producer_component_id": "helios.evaluation_engine",
+  "evidence_family": "helios.chain_state",
+  "evidence_type": "strategy_chain_state",
+  "evidence_class": "STATE_SNAPSHOT",
+  "produced_at_utc": "2026-09-28T09:20:02Z",
+  "falcon_ingested_at_utc": "2026-09-28T09:20:02Z",
+  "subject_id": "gold_staged_sequence",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "helios",
+    "upstream_ref": "helios:helios.chain_state:14"
+  },
+  "payload_hash": "sha256:e4072a0c2484bde7444464265211b3d829fb21f8d7a20c75acd2d399b85d0b5c",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "chain_id": "helios-chain-0001",
+    "chain_state": "ACTIVE",
+    "strategy_id": "gold_staged_sequence",
+    "instrument_id": "XAUUSD"
+  }
+}

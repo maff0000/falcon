@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/hermes/market_quality.v1.schema.json",
+  "title": "FalconEvent payload: hermes.market_quality (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'hermes.market_quality'.",
+  "type": "object",
+  "properties": {
+    "quality_transition_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "derivation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "previous_quality_state": {
+      "type": "string",
+      "enum": [
+        "FRESH",
+        "STALE",
+        "DEGRADED",
+        "UNKNOWN"
+      ]
+    },
+    "new_quality_state": {
+      "type": "string",
+      "enum": [
+        "FRESH",
+        "STALE",
+        "DEGRADED",
+        "UNKNOWN"
+      ]
+    }
+  },
+  "required": [
+    "quality_transition_id",
+    "derivation_id",
+    "instrument_id",
+    "previous_quality_state",
+    "new_quality_state"
+  ],
+  "additionalProperties": false
+}
