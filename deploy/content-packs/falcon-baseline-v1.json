@@ -1,0 +1,210 @@
+{
+  "id": "b726eb72-69d4-4474-84dd-f17201633e4c",
+  "rev": 1,
+  "v": "1",
+  "name": "FALCON Baseline v1",
+  "summary": "FALCON PID-02 baseline: HERMES evidence stream, saved search, dashboard.",
+  "description": "Smallest useful FALCON-oriented Graylog baseline for PID-02: a stream routing hermes.* evidence_family FalconEvents (producer_system_id=hermes rule), a saved search and a dashboard demonstrating structured FalconEvent field drill-down and producer-system filtering. Index set assignment is NOT portable via this content pack in Graylog 7.1.9 (confirmed empirically) -- streams install against whichever index set is default on the target system; re-point to a FALCON-scoped index set manually if needed. NOTE: the dashboard entity was removed from this pack after confirming Graylog 7.1.9 cannot install DASHBOARD-type content-pack entities (server-side bug: DashboardEntity deserializer requires a flat widgets field the Views-based export format no longer produces). The dashboard is a separate, live GUI/API artifact -- see deploy/README.md for how it was created and its exact definition.",
+  "vendor": "FALCON / Rogue-FORGE",
+  "url": "",
+  "created_at": "2026-09-28T11:52:01.775Z",
+  "server_version": "7.1.9+002c047",
+  "parameters": [],
+  "entities": [
+    {
+      "id": "710137ec-3ded-418a-bd6a-0ea55ceb27c1",
+      "type": {
+        "name": "stream",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON: HERMES market evidence"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "PID-02 baseline stream"
+        },
+        "disabled": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "matching_type": {
+          "@type": "string",
+          "@value": "AND"
+        },
+        "stream_rules": [
+          {
+            "type": {
+              "@type": "string",
+              "@value": "EXACT"
+            },
+            "field": {
+              "@type": "string",
+              "@value": "falcon_producer_system_id"
+            },
+            "value": {
+              "@type": "string",
+              "@value": "hermes"
+            },
+            "inverted": {
+              "@type": "boolean",
+              "@value": false
+            },
+            "description": {
+              "@type": "string",
+              "@value": ""
+            }
+          }
+        ],
+        "alert_conditions": [],
+        "alarm_callbacks": [],
+        "outputs": [],
+        "default_stream": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "remove_matches": {
+          "@type": "boolean",
+          "@value": false
+        },
+        "favorite_fields": null
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "852c8899-609b-4de0-8c81-a32b06177bb7",
+      "type": {
+        "name": "search",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "type": "SEARCH",
+        "title": {
+          "@type": "string",
+          "@value": "FALCON: HERMES evidence (saved search)"
+        },
+        "summary": {
+          "@type": "string",
+          "@value": "PID-02 baseline saved search"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Demonstrates producer_system_id/evidence_family filtering on the FALCON: HERMES market evidence stream, with structured FalconEvent field drill-down."
+        },
+        "search": {
+          "queries": [
+            {
+              "id": "bd205dac-b537-4cec-b267-668dc3c246a0",
+              "timerange": {
+                "range": 86400,
+                "type": "relative"
+              },
+              "filters": [],
+              "query": {
+                "type": "elasticsearch",
+                "query_string": "*"
+              },
+              "search_types": [
+                {
+                  "timerange": null,
+                  "query": null,
+                  "streams": [
+                    "710137ec-3ded-418a-bd6a-0ea55ceb27c1"
+                  ],
+                  "stream_categories": [],
+                  "id": "9602c47d-07eb-418e-982e-559f3f52dcf6",
+                  "name": null,
+                  "limit": 150,
+                  "offset": 0,
+                  "decorators": [],
+                  "type": "messages",
+                  "filter": null,
+                  "filters": []
+                }
+              ]
+            }
+          ],
+          "parameters": [],
+          "requires": {},
+          "owner": "admin",
+          "created_at": "2026-09-28T11:47:06.825Z"
+        },
+        "properties": [],
+        "requires": {},
+        "state": {
+          "bd205dac-b537-4cec-b267-668dc3c246a0": {
+            "selected_fields": null,
+            "static_message_list_id": null,
+            "titles": {
+              "widget": {
+                "0f6a5c1a-0000-4000-8000-000000000101": "HERMES evidence"
+              }
+            },
+            "widgets": [
+              {
+                "id": "0f6a5c1a-0000-4000-8000-000000000101",
+                "type": "messages",
+                "filter": null,
+                "filters": [],
+                "timerange": null,
+                "query": null,
+                "streams": [],
+                "stream_categories": [],
+                "config": {
+                  "fields": [
+                    "timestamp",
+                    "falcon_evidence_family",
+                    "falcon_producer_system_id",
+                    "falcon_evidence_type",
+                    "message"
+                  ],
+                  "units": {},
+                  "show_message_row": true,
+                  "show_summary": null,
+                  "decorators": [],
+                  "sort": []
+                },
+                "description": null,
+                "context": null
+              }
+            ],
+            "widget_mapping": {
+              "0f6a5c1a-0000-4000-8000-000000000101": [
+                "9602c47d-07eb-418e-982e-559f3f52dcf6"
+              ]
+            },
+            "positions": {
+              "0f6a5c1a-0000-4000-8000-000000000101": {
+                "col": 1,
+                "row": 1,
+                "height": 6,
+                "width": 8
+              }
+            },
+            "formatting": null,
+            "display_mode_settings": {
+              "positions": {}
+            }
+          }
+        },
+        "owner": "admin",
+        "created_at": "2026-09-28T11:48:25.853Z"
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    }
+  ]
+}

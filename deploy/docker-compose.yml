@@ -1,0 +1,196 @@
+# =============================================================================
+# FALCON PID-02 — Immutable Graylog DEV Stack
+#
+# Compose project name: falcon   (always run as: docker compose -p falcon ...)
+# Network:               falcon-net (explicit; never the compose-implicit default)
+#
+# This stack is FALCON's own, isolated from every other project on this
+# shared dell-debian host — in particular the unrelated Project IRIS
+# Graylog stack (containers: graylog / graylog-mongo / graylog-elasticsearch,
+# network: graylog_default, compose dir: /srv/graylog). This compose file
+# never references, joins or depends on any resource from that stack.
+#
+# BOM (see BOM.md for full detail — images referenced here BY DIGEST only):
+#   graylog/graylog:7.1.9          @ sha256:598bd41fefd5d65d05bb6a14f53d063fd717ea907a0764609413e7b89bae7406
+#   graylog/graylog-datanode:7.1.9 @ sha256:a6d545b159527b5137db041041aa0f4649119fbba29bb49b0fc8aa2a0712b6f3
+#   mongo:8.0.32                   @ sha256:4968f22d0c6c10ef29952f3e807f62872ba22b3312f25803564fbfc08255efc2
+#
+# All configuration (secret and non-secret) is externalised to ./.env
+# (generated from .env.example by ./bootstrap.sh). No values are
+# hardcoded here and no real secrets are committed. Missing required
+# variables fail loudly: Graylog/Data Node/Mongo refuse to start with
+# empty required settings, and bootstrap.sh itself checks before writing.
+# =============================================================================
+
+name: falcon
+
+networks:
+  falcon-net:
+    name: falcon-net
+    driver: bridge
+
+volumes:
+  graylog-falcon-journal:
+    name: graylog-falcon-journal
+  datanode-falcon-opensearch-data:
+    name: datanode-falcon-opensearch-data
+  mongodb-falcon-data:
+    name: mongodb-falcon-data
+  mongodb-falcon-config:
+    name: mongodb-falcon-config
+
+services:
+
+  # ---------------------------------------------------------------------
+  # mongodb-falcon — FALCON's own MongoDB (Graylog + Data Node metadata)
+  # ---------------------------------------------------------------------
+  mongodb-falcon:
+    image: mongo@sha256:4968f22d0c6c10ef29952f3e807f62872ba22b3312f25803564fbfc08255efc2
+    container_name: mongodb-falcon
+    restart: unless-stopped
+    networks:
+      - falcon-net
+    # No host port mapping at all — falcon-net only.
+    env_file:
+      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${FALCON_MONGO_ROOT_USERNAME:?FALCON_MONGO_ROOT_USERNAME is required}
+      MONGO_INITDB_ROOT_PASSWORD: ${FALCON_MONGO_ROOT_PASSWORD:?FALCON_MONGO_ROOT_PASSWORD is required}
+    volumes:
+      - mongodb-falcon-data:/data/db
+      - mongodb-falcon-config:/data/configdb
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --username \"$$MONGO_INITDB_ROOT_USERNAME\" --password \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval 'db.adminCommand(\"ping\").ok' | grep -q 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ---------------------------------------------------------------------
+  # datanode-falcon — FALCON's own Graylog Data Node (embedded OpenSearch)
+  # ---------------------------------------------------------------------
+  datanode-falcon:
+    image: graylog/graylog-datanode@sha256:a6d545b159527b5137db041041aa0f4649119fbba29bb49b0fc8aa2a0712b6f3
+    container_name: datanode-falcon
+    restart: unless-stopped
+    networks:
+      - falcon-net
+    # No host port mapping at all — falcon-net only.
+    depends_on:
+      mongodb-falcon:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      GRAYLOG_DATANODE_NODE_NAME: datanode-falcon
+      GRAYLOG_DATANODE_PASSWORD_SECRET: ${FALCON_GRAYLOG_PASSWORD_SECRET:?FALCON_GRAYLOG_PASSWORD_SECRET is required}
+      GRAYLOG_DATANODE_MONGODB_URI: mongodb://${FALCON_MONGO_ROOT_USERNAME:?required}:${FALCON_MONGO_ROOT_PASSWORD:?required}@mongodb-falcon:27017/graylog?authSource=admin
+      # Graylog 7.1's default "automatic security" model provisions mTLS
+      # certificates for Data Node via an interactive browser-based
+      # Preflight wizard (System > "Preflight config"); the REST API path
+      # behind that wizard (POST /api/{nodeID}, the per-node cert-parameters
+      # call) is not yet implemented in 7.1.9 server-side
+      # (`UnsupportedOperationException: Adding cert parameters not
+      # supported yet` — confirmed by exercising it directly against this
+      # running instance, see the PID-02 delivery report), so there is no
+      # working non-interactive path through that flow in this release.
+      # `insecure_startup` is Graylog's own documented escape hatch for
+      # exactly this case (present in Data Node's Configuration class;
+      # omitted from the shipped datanode.conf.example comments in this
+      # image, confirmed by decompiling org/graylog/datanode/Configuration
+      # inside graylog-datanode.jar): Data Node runs OpenSearch over plain
+      # HTTP on falcon-net (still never exposed to the host) with no TLS
+      # identity required, which keeps this DEV stack fully reproducible
+      # from Git + external config with zero manual/browser steps. This is
+      # a DEV-only trade-off — PROD is a later, separately governed PID
+      # that would need to revisit this (see docs/graylog/FALCON-GRAYLOG-ARCHITECTURE.md).
+      GRAYLOG_DATANODE_INSECURE_STARTUP: "true"
+      # Single-node OpenSearch cluster: without automatic Preflight-driven
+      # cluster bootstrapping, the embedded OpenSearch node never elects
+      # itself cluster manager on its own (observed failure:
+      # "cluster_manager_not_discovered_exception" on graylog-falcon's
+      # first migrations pass against a freshly started datanode-falcon).
+      # Naming this one node as its own initial cluster manager is
+      # OpenSearch's standard single-node bootstrap mechanism.
+      GRAYLOG_DATANODE_INITIAL_CLUSTER_MANAGER_NODES: datanode-falcon
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - datanode-falcon-opensearch-data:/var/lib/graylog-datanode
+    healthcheck:
+      # Checks OpenSearch's own HTTP port (9200), not just the Data Node's
+      # lightweight REST wrapper (8999) — 8999 comes up immediately even
+      # before certificates are provisioned and OpenSearch actually starts,
+      # so it is not a meaningful readiness signal on its own. 9200 only
+      # opens once OpenSearch has a valid TLS identity and is truly serving.
+      test:
+        [
+          "CMD-SHELL",
+          "bash -c 'echo > /dev/tcp/127.0.0.1/9200' || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+  # ---------------------------------------------------------------------
+  # graylog-falcon — FALCON's own Graylog server (technical GUI/evidence)
+  # ---------------------------------------------------------------------
+  graylog-falcon:
+    image: graylog/graylog@sha256:598bd41fefd5d65d05bb6a14f53d063fd717ea907a0764609413e7b89bae7406
+    container_name: graylog-falcon
+    restart: unless-stopped
+    networks:
+      - falcon-net
+    # Host UI/REST port: bound to the dell-debian LAN IP explicitly, never 0.0.0.0.
+    ports:
+      - "${FALCON_GRAYLOG_HOST_BIND_IP:?FALCON_GRAYLOG_HOST_BIND_IP is required}:${FALCON_GRAYLOG_HOST_PORT:?FALCON_GRAYLOG_HOST_PORT is required}:9000"
+    depends_on:
+      mongodb-falcon:
+        condition: service_healthy
+      datanode-falcon:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      GRAYLOG_NODE_ID_FILE: /usr/share/graylog/data/config/node-id
+      GRAYLOG_PASSWORD_SECRET: ${FALCON_GRAYLOG_PASSWORD_SECRET:?FALCON_GRAYLOG_PASSWORD_SECRET is required}
+      GRAYLOG_ROOT_PASSWORD_SHA2: ${FALCON_GRAYLOG_ROOT_PASSWORD_SHA2:?FALCON_GRAYLOG_ROOT_PASSWORD_SHA2 is required}
+      GRAYLOG_ROOT_TIMEZONE: ${FALCON_GRAYLOG_ROOT_TIMEZONE:?FALCON_GRAYLOG_ROOT_TIMEZONE is required}
+      GRAYLOG_HTTP_EXTERNAL_URI: ${FALCON_GRAYLOG_HTTP_EXTERNAL_URI:?FALCON_GRAYLOG_HTTP_EXTERNAL_URI is required}
+      GRAYLOG_MONGODB_URI: mongodb://${FALCON_MONGO_ROOT_USERNAME:?required}:${FALCON_MONGO_ROOT_PASSWORD:?required}@mongodb-falcon:27017/graylog?authSource=admin
+      GRAYLOG_IS_LEADER: "true"
+      # Disables the interactive first-run Preflight config webserver (see
+      # the long comment on datanode-falcon's GRAYLOG_DATANODE_INSECURE_STARTUP
+      # above for why the REST-driven path through it doesn't work in 7.1.9).
+      # With this off, Graylog boots straight into normal server mode and
+      # GRAYLOG_ROOT_PASSWORD_SHA2/GRAYLOG_PASSWORD_SECRET take effect
+      # immediately, non-interactively, as documented for classic
+      # (pre-Preflight) Graylog installs.
+      GRAYLOG_FEATURE_PREFLIGHT_WEB: "off"
+      # Point directly at Data Node's OpenSearch-API-compatible HTTP port
+      # (plain HTTP because of insecure_startup above) — the classic
+      # elasticsearch_hosts mechanism, bypassing the mongo-based automatic
+      # Data Node discovery that's tied to the Preflight flow we just
+      # disabled.
+      GRAYLOG_ELASTICSEARCH_HOSTS: http://datanode-falcon:9200
+    volumes:
+      - graylog-falcon-journal:/usr/share/graylog/data
+    healthcheck:
+      # Only succeeds once the real Graylog server REST API is serving
+      # (migrations run at boot before this becomes available, which can
+      # take a little while on a cold start).
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/system/lbstatus"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 180s
