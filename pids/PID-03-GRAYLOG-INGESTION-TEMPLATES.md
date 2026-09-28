@@ -134,3 +134,21 @@ second GUI anywhere in the path.
 
 A PID is not complete until its behaviour is running and proven, not
 merely coded or documented.
+
+## Closure evidence — pointer
+
+Full delivery evidence (transport decision, pipeline design and its two
+non-obvious Graylog 7.1.9 execution-order mechanics, the content-pack
+round-trip finding for `route_to_stream` and its fix, restart/recovery
+proof, and the FTE bootstrap) lives in `deploy/README.md`'s "PID-03 —
+Canonical Graylog Ingestion Path" section, not here (Fabric/README is
+the evidence trail; this file stays the spec). Automated positive/negative
+suite: `tests/fte/run_pid03_tests.py`, latest machine-readable output at
+`tests/fte/last_run_report.json` (4/4 positive PASS; 11/13 negative
+classes natively quarantined; 2 documented exceptions —
+`unknown_field.json` is a genuine Graylog 7.1.9 native-capability
+hard-stop for that one negative class, no map-key-enumeration function
+exists in the pipeline rule DSL; `identity_violation_reused_event_id.json`
+is by design per decision 22, consumer-side dedupe). Content pack:
+`deploy/content-packs/falcon-pid03-ingestion-v1.json`, round-trip-verified
+twice via full delete-and-reinstall.
