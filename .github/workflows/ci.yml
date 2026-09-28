@@ -1,0 +1,114 @@
+name: FALCON CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  repository-foundation:
+    name: Repository structure, documentation & secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify required top-level structure
+        run: |
+          set -euo pipefail
+          required_paths=(
+            "README.md"
+            "DOCUMENTATION-MANIFEST.json"
+            "docs/architecture"
+            "docs/contracts"
+            "docs/security"
+            "docs/graylog"
+            "docs/operations"
+            "docs/engineering"
+            "docs/governance"
+            "pids"
+            "schemas"
+            "registry"
+            "config"
+            "deploy"
+            "tests"
+          )
+          missing=0
+          for p in "${required_paths[@]}"; do
+            if [ ! -e "$p" ]; then
+              echo "MISSING required path: $p"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Repository structure check FAILED"
+            exit 1
+          fi
+          echo "Repository structure check PASSED"
+
+      - name: Cross-check DOCUMENTATION-MANIFEST.json against working tree
+        run: |
+          python3 - <<'PYEOF'
+          import json, sys, pathlib
+
+          manifest = json.loads(pathlib.Path("DOCUMENTATION-MANIFEST.json").read_text())
+          declared = set(manifest["paths"])
+          declared_count = manifest.get("file_count")
+
+          missing = sorted(p for p in declared if not pathlib.Path(p).is_file())
+          if missing:
+              print("Files declared in manifest but missing on disk:")
+              for m in missing:
+                  print(f"  - {m}")
+              sys.exit(1)
+
+          if declared_count is not None and declared_count != len(declared):
+              print(f"Manifest file_count ({declared_count}) does not match paths list length ({len(declared)})")
+              sys.exit(1)
+
+          print(f"Manifest cross-check PASSED ({len(declared)} declared files, all present)")
+          PYEOF
+
+      - name: Check internal Markdown links resolve
+        run: |
+          python3 - <<'PYEOF'
+          import pathlib, re, sys
+
+          link_re = re.compile(r'\[[^\]]+\]\(([^)]+)\)')
+          broken = []
+
+          for md in pathlib.Path(".").rglob("*.md"):
+              if ".git" in md.parts:
+                  continue
+              text = md.read_text(errors="ignore")
+              for target in link_re.findall(text):
+                  if target.startswith(("http://", "https://", "mailto:", "#")):
+                      continue
+                  target_path = target.split("#", 1)[0].strip()
+                  if not target_path:
+                      continue
+                  resolved = (md.parent / target_path).resolve()
+                  if not resolved.exists():
+                      broken.append(f"{md}: -> {target}")
+
+          if broken:
+              print("Broken internal Markdown links:")
+              for b in broken:
+                  print(f"  - {b}")
+              sys.exit(1)
+
+          print("Internal Markdown link check PASSED")
+          PYEOF
+
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Future test entry point (placeholder)
+        run: |
+          echo "No FALCON application code exists yet — PID-00 is documentation/foundation only."
+          echo "Later PIDs (schemas, registry, ingress, integrations) will add pytest / contract / integration / security suites as jobs here."

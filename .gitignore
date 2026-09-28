@@ -1,0 +1,75 @@
+# ============================================================
+# FALCON .gitignore
+#
+# Doctrine (docs/operations/FALCON-CONFIGURATION-AND-SECRETS.md):
+#   container image                        = software
+#   git-controlled non-secret configuration = behavioural definition
+#   external environment configuration      = installation-specific settings
+#   external secrets                        = credentials / private keys
+#   persistent volumes                      = state
+# Only the first two belong in this repository.
+# ============================================================
+
+# --- Secrets & credentials: never commit ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+!*.pub
+*_credentials.json
+*.credentials
+**/secrets/**
+
+# --- Graylog / Data Node / MongoDB runtime state (PID-02+) ---
+graylog/data/
+graylog/journal/
+datanode/data/
+mongodb/data/
+**/journal/
+**/opensearch-data/
+
+# --- Installation-specific compose overrides ---
+docker-compose.override.yml
+*.local.yml
+*.local.yaml
+
+# --- Backups ---
+*.bak
+*.dump
+backups/
+*.tar.gz
+*.tar.zst
+
+# --- Logs / cache ---
+*.log
+logs/
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Python ---
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- IDE / OS junk ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Generated test/coverage artefacts ---
+.coverage
+htmlcov/
+
+# --- CI-local scratch ---
+gitleaks-report.json
