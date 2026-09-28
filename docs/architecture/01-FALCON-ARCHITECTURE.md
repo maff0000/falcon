@@ -52,6 +52,46 @@ trusts or acts on it — that is the consumer's own governed admission
 decision, made independently and recorded back into FALCON as further
 evidence (see "Evidence vs. trust" below).
 
+## Many-producer, many-consumer model
+
+FALCON/Graylog is not architected around a single TRON consumer, or
+around any single consumer:
+
+``` text
+HERMES
+ARES
+HELIOS
+TRON instances
+      │
+      ▼
+FALCON / Graylog
+      │
+      ├── Graylog GUI
+      ├── NEO
+      ├── TRON instance 1
+      ├── TRON instance 2
+      ├── TRON instance N
+      ├── AI trading agents (read-only, governed)
+      └── future governed consumers
+```
+
+Each consumer accesses only the evidence/query surfaces it is
+authorised to read. Graylog's own governed search/API surface remains
+the default read plane for every consumer — a custom query API is not
+introduced merely because there may be many consumers.
+
+AI trading agents may be granted governed read-only access to
+structured evidence (HERMES signals/state, ARES news/risk/economic
+events, HELIOS evaluations/Trade Suggestions, TRON execution/outcome
+evidence). This is a read-side consumer capability only — not authority
+to publish or execute unless separately authorised — and requires no
+bespoke AI query service at this stage.
+
+Where a producer runs as multiple simultaneous instances (TRON, most
+immediately), each instance must remain individually attributable in
+the evidence — see `docs/contracts/TRON-FALCON-CONTRACT.md`'s Instance
+identity (FF-TRON-IDENTITY-01) section.
+
 ## FALCON-owned capabilities
 
 -   producer message template/contract, via PID-01's registries

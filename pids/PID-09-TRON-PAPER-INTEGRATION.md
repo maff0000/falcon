@@ -36,6 +36,10 @@ PID-08, PID-03, PID-04.
 -   terminal outcome model, distinguishing accepted-and-executed from
     refused-with-reason;
 -   TRON evidence emitter/spool;
+-   a stable governed `tron_instance_id` (`producer_component_id`) and
+    `tron_hostname` (`producer_instance_id`) carried on every outbound
+    FalconEvent, per FF-TRON-IDENTITY-01
+    (`docs/contracts/TRON-FALCON-CONTRACT.md`);
 -   paper execution only.
 
 ## Mandatory engineering law
@@ -58,7 +62,10 @@ PID-08, PID-03, PID-04.
 -   FALCON unavailable/lag =\> no new entry;
 -   existing paper position protection remains independent;
 -   full Trade-Suggestion→admission-decision→outcome timeline, including
-    refused (not just executed) Trade Suggestions.
+    refused (not just executed) Trade Suggestions;
+-   every emitted event carries a stable `tron_instance_id` unchanged
+    across a restart, and all evidence for that instance is
+    attributable via an ordinary Graylog search/API query on it.
 
 ## Definition of Done
 

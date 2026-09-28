@@ -33,7 +33,13 @@ PID-03.
     Graylog can express it;
 -   secret-file integration;
 -   operator vs producer access separation;
--   security event/alerting.
+-   security event/alerting;
+-   for multi-instance producers (TRON, most immediately): bind the
+    authenticated connection identity to the specific governed
+    `tron_instance_id` it is allowed to claim, so a connection cannot
+    submit evidence claiming another instance's identity — see
+    `docs/contracts/TRON-FALCON-CONTRACT.md`'s FF-TRON-IDENTITY-01
+    section.
 
 ## Mandatory engineering law
 
@@ -52,6 +58,8 @@ PID-03.
 -   valid producer accepted;
 -   wrong/revoked credential rejected;
 -   producer cannot write another namespace;
+-   a TRON connection authenticated as one `tron_instance_id` cannot
+    submit evidence claiming a different `tron_instance_id`;
 -   secrets absent from Git/log/events;
 -   rotation without semantic data loss.
 

@@ -81,3 +81,28 @@
     dormant name; if the name itself should be retired or renamed, that
     requires separate PID-01 amendment authority, not a
     documentation-only decision.
+28. FALCON/Graylog is architected for many producers and many
+    consumers, not a single TRON. Consumers (Graylog GUI, NEO, multiple
+    simultaneous TRON instances, governed read-only AI trading agents,
+    future consumers) access only the evidence/query surfaces they are
+    authorised to read, via Graylog's own governed search/API — no
+    custom query API is introduced merely because there may be many
+    consumers.
+29. FF-TRON-IDENTITY-01: every TRON trading entity/instance must
+    possess a globally unique, stable governed trader identity
+    (`tron_instance_id`) and a unique operational hostname
+    (`tron_hostname`) — two distinct concepts, never conflated. These
+    map onto PID-01's existing, closed `producer_component_id` (stable
+    governed identity) and `producer_instance_id` (operational/runtime
+    identity) envelope fields respectively — no PID-01 schema change or
+    registry amendment is made by this decision. Restart/redeployment
+    must not change `tron_instance_id`; cloning must not silently
+    duplicate one; two simultaneously active TRON entities must never
+    share one. Binding the authenticated producer connection to the
+    claimed `tron_instance_id` is PID-04's responsibility, not
+    implemented by this decision.
+30. AI trading agents may be granted governed read-only access to
+    FALCON/Graylog structured evidence (HERMES, ARES, HELIOS, TRON) as
+    an ordinary consumer under decision 28 — a read-side capability
+    only, not authority to publish or execute unless separately
+    authorised, requiring no bespoke AI query service at this stage.

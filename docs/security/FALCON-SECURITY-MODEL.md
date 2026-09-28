@@ -17,7 +17,12 @@ ARES cannot publish HELIOS events; TRON cannot publish HERMES facts.
 -   explicit ingress allow-list;
 -   schema validation before storage;
 -   security violations generate operational evidence/alerts;
--   operator GUI access separated from producer credentials.
+-   operator GUI access separated from producer credentials;
+-   for producers that run as multiple simultaneous instances (TRON,
+    most immediately), the authenticated connection identity bound to
+    the governed trader identity it is allowed to claim — see
+    `docs/contracts/TRON-FALCON-CONTRACT.md`'s FF-TRON-IDENTITY-01
+    section; owned by PID-04, not implemented in PID-03.
 
 ## Validation order
 
