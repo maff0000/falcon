@@ -162,6 +162,82 @@ def run_positive(fixture_name: str) -> dict:
     return result
 
 
+# Every PID-01 invalid fixture asserts exactly one expected outcome --
+# this is deliberately NOT a whitelist of "OK to fail" fixtures. A
+# fixture missing from this map, or one whose actual outcome does not
+# match its declared expectation, is itself a failure (see
+# _classify_negative_outcome below) -- so a newly added invalid fixture
+# must be classified here before the suite can pass, and a behaviour
+# drift on an existing fixture is never silently absorbed.
+#
+# "QUARANTINED": the load-bearing PID-03 invariant applies in full --
+#   this fixture MUST be routed to FALCON: Quarantine, never a trusted
+#   producer stream.
+# "KNOWN_CAPABILITY_EXCEPTION": a specific, evidence-backed, documented
+#   Graylog 7.1.9 pipeline-rule-DSL limitation (see deploy/README.md)
+#   -- NOT a bug, NOT worked around with bespoke middleware. The suite
+#   asserts this fixture DOES slip through as trusted, precisely so a
+#   future change in that behaviour (e.g. a Graylog upgrade adding a
+#   map-key-enumeration function) is itself caught and surfaced, rather
+#   than silently changing meaning.
+EXPECTED_NEGATIVE_OUTCOMES: dict[str, str] = {
+    "bad_event_family.json": "QUARANTINED",
+    "bad_supersession_self_reference.json": "QUARANTINED",
+    "causation_id_misused_as_correlation.json": "QUARANTINED",
+    "missing_required_field.json": "QUARANTINED",
+    "naive_timestamp.json": "QUARANTINED",
+    "non_utc_offset_timestamp.json": "QUARANTINED",
+    "payload_field_outside_family.json": "QUARANTINED",
+    "unknown_component.json": "QUARANTINED",
+    "unknown_producer_system.json": "QUARANTINED",
+    "unregistered_score_definition.json": "QUARANTINED",
+    "wrong_type.json": "QUARANTINED",
+    "unknown_field.json": "KNOWN_CAPABILITY_EXCEPTION",
+    "identity_violation_reused_event_id.json": "KNOWN_CAPABILITY_EXCEPTION",
+}
+
+
+def _classify_negative_outcome(fixture_name: str, outcome: str) -> str:
+    """Compare the actual outcome against this fixture's single declared
+    expectation. Returns one of:
+      EXPECTED_QUARANTINED                 -- pass (category 1)
+      KNOWN_CAPABILITY_EXCEPTION_CONFIRMED -- pass (category 2)
+      UNEXPECTED_SLIPPED_THROUGH           -- FAIL (category 3 -- the
+                                               exact invariant violation
+                                               this correction exists to
+                                               catch)
+      UNCLASSIFIED_FIXTURE                 -- FAIL (fixture missing from
+                                               EXPECTED_NEGATIVE_OUTCOMES
+                                               entirely)
+      UNEXPECTED_OUTCOME_FOR_EXPECTATION   -- FAIL (any other mismatch,
+                                               e.g. an expected-QUARANTINED
+                                               fixture instead landing as
+                                               NOT_FOUND_OR_DROPPED, or a
+                                               known-exception fixture
+                                               unexpectedly starting to
+                                               quarantine cleanly -- both
+                                               are behaviour drift that
+                                               must be investigated and
+                                               this map updated
+                                               deliberately, never
+                                               silently passed)
+    """
+    expected = EXPECTED_NEGATIVE_OUTCOMES.get(fixture_name)
+    if expected is None:
+        return "UNCLASSIFIED_FIXTURE"
+    if expected == "QUARANTINED":
+        if outcome == "QUARANTINED":
+            return "EXPECTED_QUARANTINED"
+        if outcome == "SLIPPED_THROUGH_AS_TRUSTED":
+            return "UNEXPECTED_SLIPPED_THROUGH"
+        return "UNEXPECTED_OUTCOME_FOR_EXPECTATION"
+    if expected == "KNOWN_CAPABILITY_EXCEPTION":
+        if outcome == "SLIPPED_THROUGH_AS_TRUSTED":
+            return "KNOWN_CAPABILITY_EXCEPTION_CONFIRMED"
+        return "UNEXPECTED_OUTCOME_FOR_EXPECTATION"
+    raise AssertionError(f"unreachable: unknown expectation {expected!r} for {fixture_name}")
+
+
 def run_negative(fixture_name: str, stream_titles: dict[str, str]) -> dict:
     path = INVALID_DIR / fixture_name
     event = sender.load_fixture(path)
@@ -191,6 +267,7 @@ def run_negative(fixture_name: str, stream_titles: dict[str, str]) -> dict:
 
     result = {"fixture": fixture_name, "falcon_event_id": falcon_event_id, "outcome": "NOT_FOUND_OR_DROPPED"}
     if hit is None:
+        result["classification"] = _classify_negative_outcome(fixture_name, result["outcome"])
         return result
 
     full = fetch_full_message(hit["index"], hit["_id"])
@@ -211,6 +288,7 @@ def run_negative(fixture_name: str, stream_titles: dict[str, str]) -> dict:
     else:
         result["outcome"] = "UNCLASSIFIED_DEFAULT_STREAM_ONLY"
     result["raw_fields"] = fields
+    result["classification"] = _classify_negative_outcome(fixture_name, result["outcome"])
     return result
 
 
@@ -260,10 +338,37 @@ def main() -> int:
     print(json.dumps(report, indent=2, default=str))
 
     pos_pass = sum(1 for r in report["positive"] if r["status"] == "PASS")
-    slipped = [r["fixture"] for r in report["negative"] if r["outcome"] == "SLIPPED_THROUGH_AS_TRUSTED"]
+
+    expected_quarantined = [r["fixture"] for r in report["negative"] if r["classification"] == "EXPECTED_QUARANTINED"]
+    known_exceptions_confirmed = [r["fixture"] for r in report["negative"] if r["classification"] == "KNOWN_CAPABILITY_EXCEPTION_CONFIRMED"]
+    unexpected_slipped_through = [r["fixture"] for r in report["negative"] if r["classification"] == "UNEXPECTED_SLIPPED_THROUGH"]
+    unclassified_fixtures = [r["fixture"] for r in report["negative"] if r["classification"] == "UNCLASSIFIED_FIXTURE"]
+    unexpected_other = [r["fixture"] for r in report["negative"] if r["classification"] == "UNEXPECTED_OUTCOME_FOR_EXPECTATION"]
+
+    # Every negative fixture must fall into exactly one of the two
+    # PASSING categories. Anything else -- including a fixture this
+    # suite doesn't even recognise -- fails the run. This is what makes
+    # "return 0" actually mean the load-bearing invariant held, not just
+    # that the four positive fixtures worked.
+    neg_ok = (len(expected_quarantined) + len(known_exceptions_confirmed)) == len(report["negative"])
+
+    report["negative_summary"] = {
+        "expected_quarantined": expected_quarantined,
+        "known_capability_exceptions_confirmed": known_exceptions_confirmed,
+        "unexpected_slipped_through_INVARIANT_VIOLATION": unexpected_slipped_through,
+        "unclassified_fixtures_missing_from_expectation_map": unclassified_fixtures,
+        "unexpected_outcome_for_declared_expectation": unexpected_other,
+        "all_negative_fixtures_accounted_for_and_ok": neg_ok,
+    }
+
     print(f"\nPositive: {pos_pass}/{len(report['positive'])} PASS")
     print(f"Negative: {len(report['negative'])} fixtures sent")
-    print(f"Negative fixtures that SLIPPED THROUGH as trusted evidence (invariant violation): {slipped or 'none'}")
+    print(f"  expected-quarantined, confirmed:            {len(expected_quarantined)}  {expected_quarantined}")
+    print(f"  known capability exceptions, confirmed:      {len(known_exceptions_confirmed)}  {known_exceptions_confirmed}")
+    print(f"  UNEXPECTED slipped-through (INVARIANT VIOLATION): {len(unexpected_slipped_through)}  {unexpected_slipped_through}")
+    print(f"  unclassified (missing from expectation map): {len(unclassified_fixtures)}  {unclassified_fixtures}")
+    print(f"  unexpected outcome for its own expectation:  {len(unexpected_other)}  {unexpected_other}")
+    print(f"  negative suite result: {'OK' if neg_ok else 'FAIL'}")
 
     out_path = REPO_ROOT / "tests" / "fte" / "last_run_report.json"
     try:
@@ -277,7 +382,7 @@ def main() -> int:
         # failure to also persist it to disk must not mask the real
         # positive/negative test outcome in the exit code.
         print(f"\n(report file not written: {exc} -- full report is in stdout above)")
-    return 0 if pos_pass == len(report["positive"]) else 1
+    return 0 if (pos_pass == len(report["positive"]) and neg_ok) else 1
 
 
 if __name__ == "__main__":
