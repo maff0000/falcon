@@ -1,5 +1,5 @@
 {
-  "file_count": 50,
+  "file_count": 51,
   "paths": [
     "README.md",
     "config/README.md",
@@ -29,6 +29,7 @@
     "docs/operations/FALCON-CONFIGURATION-AND-SECRETS.md",
     "docs/operations/FALCON-FAILURE-REPLAY.md",
     "docs/operations/FALCON-OBSERVABILITY.md",
+    "docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md",
     "docs/security/FALCON-HELIOS-TRIGGER-SIGNING.md",
     "docs/security/FALCON-PRODUCER-AUTHENTICATION.md",
     "docs/security/FALCON-SECURITY-MODEL.md",

@@ -1,6 +1,6 @@
 {
   "id": "c3461561-229e-45af-b59f-171f8f026d47",
-  "rev": 1,
+  "rev": 2,
   "v": "1",
   "server_version": "7.1.9+002c047",
   "parameters": [],
@@ -261,7 +261,7 @@
         },
         "source": {
           "@type": "string",
-          "@value": "rule \"FALCON - route INVALID to Quarantine\"\nwhen\n    (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n    (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n    (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n    (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n    (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n    (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n    (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n    (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n    (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n    (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family))\nthen\n    set_field(\"falcon_validity\", \"INVALID\");\n    route_to_stream(name: \"FALCON: Quarantine\", remove_from_default: true);\nend"
+          "@value": "rule \"FALCON - route INVALID to Quarantine\"\nwhen\n    (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n    (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n    (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n    (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n    (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n    (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n    (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n    (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n    (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n    (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family)) ||\n        (has_field(\"falcon_identity_mismatch\") && to_bool($message.falcon_identity_mismatch))\nthen\n    set_field(\"falcon_validity\", \"INVALID\");\n    route_to_stream(name: \"FALCON: Quarantine\", remove_from_default: true);\nend"
         }
       },
       "constraints": [
@@ -373,7 +373,7 @@
         },
         "source": {
           "@type": "string",
-          "@value": "rule \"FALCON - route valid TRON evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"tron\" &&\n    (!has_field(\"evidence_family\") || !ends_with(to_string($message.evidence_family), \".health\"))\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: TRON evidence\", remove_from_default: true);\nend"
+          "@value": "rule \"FALCON - route valid TRON evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family)) ||\n        (has_field(\"falcon_identity_mismatch\") && to_bool($message.falcon_identity_mismatch))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"tron\" &&\n    (!has_field(\"evidence_family\") || !ends_with(to_string($message.evidence_family), \".health\"))\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: TRON evidence\", remove_from_default: true);\nend"
         }
       },
       "constraints": [
@@ -481,11 +481,11 @@
         },
         "description": {
           "@type": "string",
-          "@value": "PID-03 canonical FALCON ingestion pipeline. Stage 0 un-flattens JSON sub-objects and sets the FALCON-owned ingestion timestamp (always has a match via its own always-true/has_field rules). Stage 1 runs native structural validation checks against stage-0-derived payload_* fields, plus a dedicated always-true passthrough rule -- required because Graylog 7.1.9 halts the pipeline before the next stage runs at all when a stage has ZERO matching rules under 'match either', and every genuinely clean FalconEvent makes every flag-check rule evaluate false. Stage 2 routes every message to FALCON: Quarantine OR its trusted per-producer stream, in ONE stage, using a fully self-contained (inlined) invalid-condition per rule rather than a shared derived field, because rules within one stage do not see each other's field mutations (only rules in a later stage do) -- both mechanics were confirmed empirically during PID-03 delivery and are documented in the PID-03 delivery report."
+          "@value": "PID-03 canonical FALCON ingestion pipeline. Stage 0 un-flattens JSON sub-objects and sets the FALCON-owned ingestion timestamp (always has a match via its own always-true/has_field rules). Stage 1 runs native structural validation checks against stage-0-derived payload_* fields, plus a dedicated always-true passthrough rule -- required because Graylog 7.1.9 halts the pipeline before the next stage runs at all when a stage has ZERO matching rules under 'match either', and every genuinely clean FalconEvent makes every flag-check rule evaluate false. Stage 2 routes every message to FALCON: Quarantine OR its trusted per-producer stream, in ONE stage, using a fully self-contained (inlined) invalid-condition per rule rather than a shared derived field, because rules within one stage do not see each other's field mutations (only rules in a later stage do) -- both mechanics were confirmed empirically during PID-03 delivery and are documented in the PID-03 delivery report. PID-04 adds 7 stage-1 identity-enforcement rules (from_input(name:)-based; see deploy/README.md PID-04 section) and extends all 7 stage-2 routing rules' inlined invalid-condition with a falcon_identity_mismatch check, following the exact same same-stage-mutation-visibility pattern PID-03 already proved for the other 10 structural flags."
         },
         "source": {
           "@type": "string",
-          "@value": "pipeline \"FALCON Ingestion\"\nstage 0 match either\n    rule \"FALCON - Parse payload JSON\"\n    rule \"FALCON - Parse provenance_ref JSON\"\n    rule \"FALCON - Set falcon_ingested_at_utc\"\nstage 1 match either\n    rule \"FALCON - stage 1 passthrough\"\n    rule \"FALCON - flag missing required fields\"\n    rule \"FALCON - flag unknown producer system\"\n    rule \"FALCON - flag unknown component\"\n    rule \"FALCON - flag unregistered evidence family\"\n    rule \"FALCON - flag non-UTC or naive timestamp\"\n    rule \"FALCON - flag decimal type violation\"\n    rule \"FALCON - flag malformed causation_id shape\"\n    rule \"FALCON - flag self-referential supersession\"\n    rule \"FALCON - flag unregistered score definition\"\n    rule \"FALCON - flag hermes payload carrying TRON-scoped field\"\nstage 2 match either\n    rule \"FALCON - route INVALID to Quarantine\"\n    rule \"FALCON - route valid HERMES evidence\"\n    rule \"FALCON - route valid ARES evidence\"\n    rule \"FALCON - route valid HELIOS Trade Suggestions\"\n    rule \"FALCON - route valid HELIOS evidence\"\n    rule \"FALCON - route valid TRON evidence\"\n    rule \"FALCON - route valid Operational Health evidence\"\nend"
+          "@value": "pipeline \"FALCON Ingestion\"\nstage 0 match either\n    rule \"FALCON - Parse payload JSON\"\n    rule \"FALCON - Parse provenance_ref JSON\"\n    rule \"FALCON - Set falcon_ingested_at_utc\"\nstage 1 match either\n    rule \"FALCON - stage 1 passthrough\"\n    rule \"FALCON - flag missing required fields\"\n    rule \"FALCON - flag unknown producer system\"\n    rule \"FALCON - flag unknown component\"\n    rule \"FALCON - flag unregistered evidence family\"\n    rule \"FALCON - flag non-UTC or naive timestamp\"\n    rule \"FALCON - flag decimal type violation\"\n    rule \"FALCON - flag malformed causation_id shape\"\n    rule \"FALCON - flag self-referential supersession\"\n    rule \"FALCON - flag unregistered score definition\"\n    rule \"FALCON - flag hermes payload carrying TRON-scoped field\"\n    rule \"FALCON - identity check: HERMES input\"\n    rule \"FALCON - identity check: ARES input\"\n    rule \"FALCON - identity check: HELIOS input\"\n    rule \"FALCON - identity check: TRON input (tron.execution_engine) system\"\n    rule \"FALCON - identity check: TRON input (tron.execution_engine) component\"\n    rule \"FALCON - identity check: TRON input (tron.discovery_service) system\"\n    rule \"FALCON - identity check: TRON input (tron.discovery_service) component\"\nstage 2 match either\n    rule \"FALCON - route INVALID to Quarantine\"\n    rule \"FALCON - route valid HERMES evidence\"\n    rule \"FALCON - route valid ARES evidence\"\n    rule \"FALCON - route valid HELIOS Trade Suggestions\"\n    rule \"FALCON - route valid HELIOS evidence\"\n    rule \"FALCON - route valid TRON evidence\"\n    rule \"FALCON - route valid Operational Health evidence\"\nend"
         },
         "connected_streams": [
           {
@@ -603,7 +603,7 @@
         },
         "source": {
           "@type": "string",
-          "@value": "rule \"FALCON - route valid HELIOS evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"helios\" &&\n    (!has_field(\"evidence_family\") || (to_string($message.evidence_family) != \"helios.strategy_trigger\" && !ends_with(to_string($message.evidence_family), \".health\")))\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: HELIOS evidence\", remove_from_default: true);\nend"
+          "@value": "rule \"FALCON - route valid HELIOS evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family)) ||\n        (has_field(\"falcon_identity_mismatch\") && to_bool($message.falcon_identity_mismatch))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"helios\" &&\n    (!has_field(\"evidence_family\") || (to_string($message.evidence_family) != \"helios.strategy_trigger\" && !ends_with(to_string($message.evidence_family), \".health\")))\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: HELIOS evidence\", remove_from_default: true);\nend"
         }
       },
       "constraints": [
@@ -631,7 +631,7 @@
         },
         "source": {
           "@type": "string",
-          "@value": "rule \"FALCON - route valid HERMES evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"hermes\" &&\n    (!has_field(\"evidence_family\") || !ends_with(to_string($message.evidence_family), \".health\"))\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: HERMES evidence\", remove_from_default: true);\nend"
+          "@value": "rule \"FALCON - route valid HERMES evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family)) ||\n        (has_field(\"falcon_identity_mismatch\") && to_bool($message.falcon_identity_mismatch))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"hermes\" &&\n    (!has_field(\"evidence_family\") || !ends_with(to_string($message.evidence_family), \".health\"))\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: HERMES evidence\", remove_from_default: true);\nend"
         }
       },
       "constraints": [
@@ -687,7 +687,7 @@
         },
         "source": {
           "@type": "string",
-          "@value": "rule \"FALCON - route valid Operational Health evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family))\n    ) &&\n    has_field(\"evidence_family\") &&\n    ends_with(to_string($message.evidence_family), \".health\")\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: Operational Health Evidence\", remove_from_default: true);\nend"
+          "@value": "rule \"FALCON - route valid Operational Health evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family)) ||\n        (has_field(\"falcon_identity_mismatch\") && to_bool($message.falcon_identity_mismatch))\n    ) &&\n    has_field(\"evidence_family\") &&\n    ends_with(to_string($message.evidence_family), \".health\")\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: Operational Health Evidence\", remove_from_default: true);\nend"
         }
       },
       "constraints": [
@@ -841,7 +841,7 @@
         },
         "source": {
           "@type": "string",
-          "@value": "rule \"FALCON - route valid ARES evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"ares\" &&\n    (!has_field(\"evidence_family\") || !ends_with(to_string($message.evidence_family), \".health\"))\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: ARES evidence\", remove_from_default: true);\nend"
+          "@value": "rule \"FALCON - route valid ARES evidence\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family)) ||\n        (has_field(\"falcon_identity_mismatch\") && to_bool($message.falcon_identity_mismatch))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"ares\" &&\n    (!has_field(\"evidence_family\") || !ends_with(to_string($message.evidence_family), \".health\"))\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: ARES evidence\", remove_from_default: true);\nend"
         }
       },
       "constraints": [
@@ -939,7 +939,7 @@
         },
         "source": {
           "@type": "string",
-          "@value": "rule \"FALCON - route valid HELIOS Trade Suggestions\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"helios\" &&\n    has_field(\"evidence_family\") &&\n    to_string($message.evidence_family) == \"helios.strategy_trigger\"\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: HELIOS Trade Suggestions\", remove_from_default: true);\nend"
+          "@value": "rule \"FALCON - route valid HELIOS Trade Suggestions\"\nwhen\n    !(\n        (has_field(\"falcon_missing_required_field\") && to_bool($message.falcon_missing_required_field)) ||\n        (has_field(\"falcon_unknown_producer_system\") && to_bool($message.falcon_unknown_producer_system)) ||\n        (has_field(\"falcon_unknown_component\") && to_bool($message.falcon_unknown_component)) ||\n        (has_field(\"falcon_unregistered_evidence_family\") && to_bool($message.falcon_unregistered_evidence_family)) ||\n        (has_field(\"falcon_bad_timestamp\") && to_bool($message.falcon_bad_timestamp)) ||\n        (has_field(\"falcon_decimal_type_violation\") && to_bool($message.falcon_decimal_type_violation)) ||\n        (has_field(\"falcon_bad_causation_id_shape\") && to_bool($message.falcon_bad_causation_id_shape)) ||\n        (has_field(\"falcon_self_referential_supersession\") && to_bool($message.falcon_self_referential_supersession)) ||\n        (has_field(\"falcon_unregistered_score_definition\") && to_bool($message.falcon_unregistered_score_definition)) ||\n        (has_field(\"falcon_payload_field_outside_family\") && to_bool($message.falcon_payload_field_outside_family)) ||\n        (has_field(\"falcon_identity_mismatch\") && to_bool($message.falcon_identity_mismatch))\n    ) &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) == \"helios\" &&\n    has_field(\"evidence_family\") &&\n    to_string($message.evidence_family) == \"helios.strategy_trigger\"\nthen\n    set_field(\"falcon_validity\", \"VALID\");\n    route_to_stream(name: \"FALCON: HELIOS Trade Suggestions\", remove_from_default: true);\nend"
         }
       },
       "constraints": [
@@ -996,12 +996,568 @@
           "version": ">=7.1.9+002c047"
         }
       ]
+    },
+    {
+      "id": "e02d555b-41f6-4aa0-b0c3-759f18b31af4",
+      "type": {
+        "name": "pipeline_rule",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON - identity check: HERMES input"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Stage-1 identity enforcement (PID-04, FF-PRODUCER-IDENTITY-01). The HERMES dedicated input is authorised for producer_system_id=\"hermes\" only. from_input(name:) resolves the CURRENT input by its fixed title at rule-evaluation time (never an input id), so this survives the input being recreated (content-pack reinstall, disaster recovery). A mismatch here does not repair or overwrite the claimed identity -- it is preserved and only flagged; stage 2's routing rules (updated for PID-04) send any flagged message to FALCON: Quarantine, never a trusted stream."
+        },
+        "source": {
+          "@type": "string",
+          "@value": "rule \"FALCON - identity check: HERMES input\"\nwhen\n    from_input(name: \"FALCON Producer Ingest — HERMES\") &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) != \"hermes\"\nthen\n    set_field(\"falcon_identity_mismatch\", true);\n    set_field(\"falcon_security_reason\", concat(\"producer identity mismatch: input authorised for producer_system_id=hermes, message claimed producer_system_id=\", to_string($message.producer_system_id)));\nend"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "c025697f-ff64-40d5-a2b4-bf4424587b02",
+      "type": {
+        "name": "pipeline_rule",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON - identity check: ARES input"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Stage-1 identity enforcement (PID-04, FF-PRODUCER-IDENTITY-01). See the HERMES identity-check rule's description for the full from_input(name:) rationale -- identical mechanism, ARES's own dedicated input and authorised producer_system_id."
+        },
+        "source": {
+          "@type": "string",
+          "@value": "rule \"FALCON - identity check: ARES input\"\nwhen\n    from_input(name: \"FALCON Producer Ingest — ARES\") &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) != \"ares\"\nthen\n    set_field(\"falcon_identity_mismatch\", true);\n    set_field(\"falcon_security_reason\", concat(\"producer identity mismatch: input authorised for producer_system_id=ares, message claimed producer_system_id=\", to_string($message.producer_system_id)));\nend"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "02d0b81e-144a-4a9d-bbb9-b791fa90cdee",
+      "type": {
+        "name": "pipeline_rule",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON - identity check: HELIOS input"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Stage-1 identity enforcement (PID-04, FF-PRODUCER-IDENTITY-01). See the HERMES identity-check rule's description for the full from_input(name:) rationale -- identical mechanism, HELIOS's own dedicated input and authorised producer_system_id."
+        },
+        "source": {
+          "@type": "string",
+          "@value": "rule \"FALCON - identity check: HELIOS input\"\nwhen\n    from_input(name: \"FALCON Producer Ingest — HELIOS\") &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) != \"helios\"\nthen\n    set_field(\"falcon_identity_mismatch\", true);\n    set_field(\"falcon_security_reason\", concat(\"producer identity mismatch: input authorised for producer_system_id=helios, message claimed producer_system_id=\", to_string($message.producer_system_id)));\nend"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "29659d1f-5cab-4a09-80b9-a0bbb048c6f1",
+      "type": {
+        "name": "pipeline_rule",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON - identity check: TRON input (tron.execution_engine) system"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Stage-1 identity enforcement (PID-04, FF-TRON-INGRESS-01). TRON identities are checked on TWO fields, each in its own single-condition rule (matching PID-03's one-condition-per-rule flag style, and avoiding any untested combined-condition/ternary DSL construct): this rule checks producer_system_id; the sibling '... component' rule checks producer_component_id. Either mismatching is sufficient to quarantine."
+        },
+        "source": {
+          "@type": "string",
+          "@value": "rule \"FALCON - identity check: TRON input (tron.execution_engine) system\"\nwhen\n    from_input(name: \"FALCON Producer Ingest — TRON (tron.execution_engine)\") &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) != \"tron\"\nthen\n    set_field(\"falcon_identity_mismatch\", true);\n    set_field(\"falcon_security_reason\", concat(\"producer identity mismatch: input authorised for tron.execution_engine (producer_system_id=tron), message claimed producer_system_id=\", to_string($message.producer_system_id)));\nend"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "31c38c51-2b71-4021-9232-21905431cda8",
+      "type": {
+        "name": "pipeline_rule",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON - identity check: TRON input (tron.execution_engine) component"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Stage-1 identity enforcement (PID-04, FF-TRON-INGRESS-01). Checks producer_component_id specifically -- this is the rule that catches TRON-A-claiming-TRON-B impersonation, since both TRON identities share producer_system_id=\"tron\"."
+        },
+        "source": {
+          "@type": "string",
+          "@value": "rule \"FALCON - identity check: TRON input (tron.execution_engine) component\"\nwhen\n    from_input(name: \"FALCON Producer Ingest — TRON (tron.execution_engine)\") &&\n    has_field(\"producer_component_id\") &&\n    to_string($message.producer_component_id) != \"tron.execution_engine\"\nthen\n    set_field(\"falcon_identity_mismatch\", true);\n    set_field(\"falcon_security_reason\", concat(\"producer identity mismatch: input authorised for producer_component_id=tron.execution_engine, message claimed producer_component_id=\", to_string($message.producer_component_id)));\nend"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "319228f2-4922-4e36-a81f-ea6e71610103",
+      "type": {
+        "name": "pipeline_rule",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON - identity check: TRON input (tron.discovery_service) system"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Stage-1 identity enforcement (PID-04, FF-TRON-INGRESS-01). See the tron.execution_engine sibling rules' descriptions for the full rationale -- identical mechanism for the second DEV TRON identity."
+        },
+        "source": {
+          "@type": "string",
+          "@value": "rule \"FALCON - identity check: TRON input (tron.discovery_service) system\"\nwhen\n    from_input(name: \"FALCON Producer Ingest — TRON (tron.discovery_service)\") &&\n    has_field(\"producer_system_id\") &&\n    to_string($message.producer_system_id) != \"tron\"\nthen\n    set_field(\"falcon_identity_mismatch\", true);\n    set_field(\"falcon_security_reason\", concat(\"producer identity mismatch: input authorised for tron.discovery_service (producer_system_id=tron), message claimed producer_system_id=\", to_string($message.producer_system_id)));\nend"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "a8ab9d4e-8d63-4f32-872b-18eb13d591b9",
+      "type": {
+        "name": "pipeline_rule",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON - identity check: TRON input (tron.discovery_service) component"
+        },
+        "description": {
+          "@type": "string",
+          "@value": "Stage-1 identity enforcement (PID-04, FF-TRON-INGRESS-01). Checks producer_component_id specifically -- this is the rule that catches TRON-B-claiming-TRON-A impersonation."
+        },
+        "source": {
+          "@type": "string",
+          "@value": "rule \"FALCON - identity check: TRON input (tron.discovery_service) component\"\nwhen\n    from_input(name: \"FALCON Producer Ingest — TRON (tron.discovery_service)\") &&\n    has_field(\"producer_component_id\") &&\n    to_string($message.producer_component_id) != \"tron.discovery_service\"\nthen\n    set_field(\"falcon_identity_mismatch\", true);\n    set_field(\"falcon_security_reason\", concat(\"producer identity mismatch: input authorised for producer_component_id=tron.discovery_service, message claimed producer_component_id=\", to_string($message.producer_component_id)));\nend"
+        }
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "a3a3c5a1-69bb-4738-a8f7-10729d40b299",
+      "type": {
+        "name": "input",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON Producer Ingest — HERMES"
+        },
+        "configuration": {
+          "max_message_size": {
+            "@type": "integer",
+            "@value": 2097152
+          },
+          "charset_name": {
+            "@type": "string",
+            "@value": "UTF-8"
+          },
+          "bind_address": {
+            "@type": "string",
+            "@value": "0.0.0.0"
+          },
+          "port": {
+            "@type": "integer",
+            "@value": 12411
+          },
+          "tls_enable": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "tls_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.crt"
+          },
+          "tls_key_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.key"
+          },
+          "tls_client_auth": {
+            "@type": "string",
+            "@value": "required"
+          },
+          "tls_client_auth_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/trust/hermes"
+          },
+          "use_null_delimiter": {
+            "@type": "boolean",
+            "@value": true
+          }
+        },
+        "static_fields": {},
+        "type": {
+          "@type": "string",
+          "@value": "org.graylog2.inputs.gelf.tcp.GELFTCPInput"
+        },
+        "global": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "extractors": []
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "e51f41d0-249b-4bff-b438-88986a1cfb80",
+      "type": {
+        "name": "input",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON Producer Ingest — ARES"
+        },
+        "configuration": {
+          "max_message_size": {
+            "@type": "integer",
+            "@value": 2097152
+          },
+          "charset_name": {
+            "@type": "string",
+            "@value": "UTF-8"
+          },
+          "bind_address": {
+            "@type": "string",
+            "@value": "0.0.0.0"
+          },
+          "port": {
+            "@type": "integer",
+            "@value": 12412
+          },
+          "tls_enable": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "tls_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.crt"
+          },
+          "tls_key_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.key"
+          },
+          "tls_client_auth": {
+            "@type": "string",
+            "@value": "required"
+          },
+          "tls_client_auth_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/trust/ares"
+          },
+          "use_null_delimiter": {
+            "@type": "boolean",
+            "@value": true
+          }
+        },
+        "static_fields": {},
+        "type": {
+          "@type": "string",
+          "@value": "org.graylog2.inputs.gelf.tcp.GELFTCPInput"
+        },
+        "global": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "extractors": []
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "6e48876b-3d8a-4530-b861-3c27064c1fc2",
+      "type": {
+        "name": "input",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON Producer Ingest — HELIOS"
+        },
+        "configuration": {
+          "max_message_size": {
+            "@type": "integer",
+            "@value": 2097152
+          },
+          "charset_name": {
+            "@type": "string",
+            "@value": "UTF-8"
+          },
+          "bind_address": {
+            "@type": "string",
+            "@value": "0.0.0.0"
+          },
+          "port": {
+            "@type": "integer",
+            "@value": 12413
+          },
+          "tls_enable": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "tls_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.crt"
+          },
+          "tls_key_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.key"
+          },
+          "tls_client_auth": {
+            "@type": "string",
+            "@value": "required"
+          },
+          "tls_client_auth_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/trust/helios"
+          },
+          "use_null_delimiter": {
+            "@type": "boolean",
+            "@value": true
+          }
+        },
+        "static_fields": {},
+        "type": {
+          "@type": "string",
+          "@value": "org.graylog2.inputs.gelf.tcp.GELFTCPInput"
+        },
+        "global": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "extractors": []
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "2d17d281-d095-411b-b652-51fe4cb1081c",
+      "type": {
+        "name": "input",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON Producer Ingest — TRON (tron.execution_engine)"
+        },
+        "configuration": {
+          "max_message_size": {
+            "@type": "integer",
+            "@value": 2097152
+          },
+          "charset_name": {
+            "@type": "string",
+            "@value": "UTF-8"
+          },
+          "bind_address": {
+            "@type": "string",
+            "@value": "0.0.0.0"
+          },
+          "port": {
+            "@type": "integer",
+            "@value": 12414
+          },
+          "tls_enable": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "tls_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.crt"
+          },
+          "tls_key_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.key"
+          },
+          "tls_client_auth": {
+            "@type": "string",
+            "@value": "required"
+          },
+          "tls_client_auth_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/trust/tron_execution_engine"
+          },
+          "use_null_delimiter": {
+            "@type": "boolean",
+            "@value": true
+          }
+        },
+        "static_fields": {},
+        "type": {
+          "@type": "string",
+          "@value": "org.graylog2.inputs.gelf.tcp.GELFTCPInput"
+        },
+        "global": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "extractors": []
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
+    },
+    {
+      "id": "5c3baa02-a365-49cb-9b88-ae7711dedf78",
+      "type": {
+        "name": "input",
+        "version": "1"
+      },
+      "v": "1",
+      "data": {
+        "title": {
+          "@type": "string",
+          "@value": "FALCON Producer Ingest — TRON (tron.discovery_service)"
+        },
+        "configuration": {
+          "max_message_size": {
+            "@type": "integer",
+            "@value": 2097152
+          },
+          "charset_name": {
+            "@type": "string",
+            "@value": "UTF-8"
+          },
+          "bind_address": {
+            "@type": "string",
+            "@value": "0.0.0.0"
+          },
+          "port": {
+            "@type": "integer",
+            "@value": 12415
+          },
+          "tls_enable": {
+            "@type": "boolean",
+            "@value": true
+          },
+          "tls_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.crt"
+          },
+          "tls_key_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/server/server.key"
+          },
+          "tls_client_auth": {
+            "@type": "string",
+            "@value": "required"
+          },
+          "tls_client_auth_cert_file": {
+            "@type": "string",
+            "@value": "/usr/share/graylog/data/pid04-mtls/trust/tron_discovery_service"
+          },
+          "use_null_delimiter": {
+            "@type": "boolean",
+            "@value": true
+          }
+        },
+        "static_fields": {},
+        "type": {
+          "@type": "string",
+          "@value": "org.graylog2.inputs.gelf.tcp.GELFTCPInput"
+        },
+        "global": {
+          "@type": "boolean",
+          "@value": true
+        },
+        "extractors": []
+      },
+      "constraints": [
+        {
+          "type": "server-version",
+          "version": ">=7.1.9+002c047"
+        }
+      ]
     }
   ],
-  "name": "FALCON PID-03 Ingestion v1",
+  "name": "FALCON PID-03+PID-04 Ingestion v1",
   "vendor": "FALCON / Rogue-FORGE",
   "url": "",
   "created_at": "2026-09-28T16:37:26.000Z",
-  "summary": "FALCON PID-03: canonical Graylog-native ingestion path (GELF TCP input, FALCON Ingestion pipeline + 21 rules, 7 streams: 6 trusted producer/health streams + Quarantine).",
-  "description": "Exported Graylog Content Pack for PID-03's real, running, proven ingestion path. Covers: the 'FALCON Producer Ingest (GELF TCP)' input; the 'FALCON Ingestion' pipeline (3 stages: JSON un-flattening + FALCON-owned ingestion timestamp, native structural validation, quarantine-or-trusted routing) and its 21 rules; and the 7 FALCON streams (HERMES/ARES/HELIOS/HELIOS Trade Suggestions/TRON/Operational Health Evidence/Quarantine). Does NOT cover the 'FALCON Evidence' index set (PID-02 already established index sets are not portable via Graylog 7.1.9 content packs; re-point each stream to it manually after install, same as PID-02's own documented limitation) or the input's bind_address/port if the target host differs (re-check after install). Kept as a separate, new-versioned file rather than folding into deploy/content-packs/falcon-baseline-v1.json because PID-03 adds a materially different, much larger set of live-traffic-critical entities (an input and a validation/routing pipeline) than PID-02's baseline (one demo stream + saved search) -- separate lifecycle/versioning."
+  "summary": "FALCON PID-03 canonical ingestion (unchanged) PLUS PID-04 producer connection security: 5 dedicated mTLS GELF TCP inputs (HERMES/ARES/HELIOS/TRON x2) and 7 new stage-1 from_input(name:)-based identity-enforcement rules, extending (not duplicating) the existing 'FALCON Ingestion' pipeline and its 7 routing rules.",
+  "description": "Exported Graylog Content Pack for PID-03's real, running, proven ingestion path. Covers: the 'FALCON Producer Ingest (GELF TCP)' input; the 'FALCON Ingestion' pipeline (3 stages: JSON un-flattening + FALCON-owned ingestion timestamp, native structural validation, quarantine-or-trusted routing) and its 21 rules; and the 7 FALCON streams (HERMES/ARES/HELIOS/HELIOS Trade Suggestions/TRON/Operational Health Evidence/Quarantine). Does NOT cover the 'FALCON Evidence' index set (PID-02 already established index sets are not portable via Graylog 7.1.9 content packs; re-point each stream to it manually after install, same as PID-02's own documented limitation) or the input's bind_address/port if the target host differs (re-check after install). Kept as a separate, new-versioned file rather than folding into deploy/content-packs/falcon-baseline-v1.json because PID-03 adds a materially different, much larger set of live-traffic-critical entities (an input and a validation/routing pipeline) than PID-02's baseline (one demo stream + saved search) -- separate lifecycle/versioning. PID-04 REVISION 2 (this revision): adds 5 dedicated GELF TCP+mTLS inputs -- 'FALCON Producer Ingest — HERMES/ARES/HELIOS/TRON (tron.execution_engine)/TRON (tron.discovery_service)' -- each bound to exactly one authorised producer identity via its own single-leaf mTLS trust directory (see deploy/README.md). Adds 7 new stage-1 pipeline rules that use the native from_input(name:) function (NOT a lookup table or any hardcoded input id) to bind each message's claimed producer_system_id/producer_component_id to the input it actually arrived on; a mismatch is preserved as-claimed and flagged (falcon_identity_mismatch, falcon_security_reason), never repaired or overwritten, per FF-PRODUCER-IDENTITY-01. Extends (does not duplicate) all 7 existing stage-2 routing rules to also quarantine on that flag. The pre-existing shared 'FALCON Producer Ingest (GELF TCP)' input is left present and unchanged in this pack; its decommissioning is a separate, explicit, manual step (see the PID-04 runbook), executed only after the dedicated inputs are independently proven -- never an implicit content-pack side effect. mTLS certificate/key material is NOT part of this content pack (never committed to Git or baked into an image) -- it must already be present on the target host filesystem at the paths this pack's input configurations reference (see deploy/README.md's PID-04 certificate placement section) before this pack is installed."
 }
