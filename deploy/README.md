@@ -343,6 +343,14 @@ docker run --rm --network falcon-net \
   python:3.11-slim python3 /repo/tests/fte/run_pid03_tests.py
 ```
 
+> **PID-04 update:** as of PID-04 rev 3, the shared input this bare
+> invocation targets (port 12401) has been permanently removed from the
+> authoritative content pack (FF-LEGACY-INGRESS-01) — this command and
+> the "Latest run" result below are preserved as PID-03's own historical
+> proof, not a live regression check. See "Test-harness modes: `pid03`
+> (historical) vs `pid04` (current regression authority)" further down
+> this file for the current equivalent.
+
 Latest run: **4/4 positive fixtures PASS** (HERMES/ARES/HELIOS/TRON, one
 each, with full field-preservation + decimal-precision proof); of the 13
 negative fixtures, **11 are natively quarantined** and 2 are documented,
@@ -392,3 +400,542 @@ discarding it before a Graylog `Message` object is ever created — it
 never reaches the pipeline, is never indexed anywhere, and is not
 distinguishable from network noise. This is Graylog's own
 transport-layer behaviour, not a FALCON-level check.
+
+---
+
+# PID-04 — Producer Connection Security (mTLS + dedicated inputs)
+
+**Status note:** this section is the load-bearing record for PID-04
+(FF-ARCH-DOC-01 / FF-FORGE-NOTES-01) — Memory Fabric only points here,
+it does not replace this document. It is written to the standard "would
+a competent engineer six months from now have to rediscover this?" — if
+yes, it belongs here. Authorship split: the FORGE Engineer produced all
+artifacts (this section, the content pack, the test-suite code, the
+runbook, the certificate material) without ever holding a working
+Graylog admin credential (an explicit sandbox restriction, upheld
+through two separate escalations — see the PID-04 forge report for the
+full trail); the privileged installation, adversarial testing and
+reconstruction proof were executed separately, by Rogue, following
+`docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md` exactly.
+Wherever a claim below depends on that execution rather than on
+something this delivery could verify itself (static jar inspection, or
+a local non-Graylog TLS self-test), it says so explicitly.
+
+## Why mTLS alone doesn't identify a producer to the pipeline
+
+mTLS answers exactly one question: *is this connection authorised to
+talk to this specific input at all?* It does not, and architecturally
+cannot, tell a Graylog pipeline rule *which* producer identity
+presented that certificate — Graylog's pipeline-rule DSL has no
+function that inspects the peer certificate a message's connection
+carried (confirmed by inspecting `graylog.jar`'s pipeline-processor
+function classes; no such function exists in 7.1.9). This was flagged
+during PID-04's own discovery phase and holds here too: **mTLS proves
+"authorised", never "who."** Identity has to come from somewhere else —
+see the next section.
+
+## Why dedicated inputs are the governed identity boundary
+
+Since mTLS can't carry identity into the pipeline, the *input a message
+physically arrived on* has to. Graylog's `gl2_source_input` field is
+set by Graylog itself at receipt time from the real input object the
+message came in on — it is not producer-supplied and not spoofable by
+the sender (confirmed during PID-04 discovery). By giving each producer
+identity its **own** input, with its **own** mTLS trust directory
+containing only that producer's leaf certificate, the input a message
+arrived on becomes a trustworthy proxy for "which producer connection
+authenticated this message" — without needing any certificate-identity
+inspection Graylog doesn't support. One input per identity, one leaf
+cert per input's trust directory: HERMES, ARES, HELIOS, and the two DEV
+TRON identities (`tron.execution_engine`, `tron.discovery_service`) each
+get their own dedicated `GELFTCPInput` (ports 12411-12415; see the
+content pack for the exact title/port/trust-directory triples).
+
+## Why `gl2_source_input` is trustworthy
+
+Carried over unchanged from PID-04's discovery phase (not re-derived by
+this delivery): `gl2_source_input` is populated by Graylog's own input
+dispatch code from the real, currently-running input object, before any
+pipeline rule ever runs, and no GELF additional field or pipeline
+function can overwrite which input a message is attributed to after the
+fact. A producer cannot claim "I arrived via the HERMES input" by
+sending a GELF field named anything — the only way to actually arrive
+via the HERMES input is to hold a certificate in that input's own trust
+directory and connect to that input's own port.
+
+## Why `from_input(name:)` is preferred over an id-lookup-table/reconciliation script
+
+Section 4 of this PID's brief anticipated the load-bearing risk
+correctly: Graylog assigns every input a MongoDB ObjectId that changes
+if the input is ever recreated (a disaster-recovery restore, a
+content-pack reinstall, routine maintenance) — exactly the failure class
+PID-03 already hit and fixed for `route_to_stream(id:)` vs
+`route_to_stream(name:)`. The brief's own suggested fallback was a
+file-based Lookup Table data adapter plus a git-tracked reconciliation
+script that re-resolves each input's current id into a CSV Graylog
+reads.
+
+Inspecting `graylog.jar` directly (`org/graylog/plugins/pipelineprocessor/
+functions/FromInput.class`) found something better already built into
+Graylog 7.1.9 itself: a native pipeline function, **`from_input(name:
+"<input title>")`**, which iterates the live `InputRegistry` and matches
+on `getTitle().equalsIgnoreCase(name)` **at rule-evaluation time** —
+functionally identical to how `route_to_stream(name:)` already resolves
+a stream by title rather than a hardcoded id. This makes the
+lookup-table/CSV/reconciliation-script design unnecessary: each
+identity-check rule hardcodes only a fixed, descriptive input **title**
+(e.g. `"FALCON Producer Ingest — HERMES"`) directly in its git-tracked
+DSL source, never an id, and Graylog resolves the real, current input
+object by that title on every single message, live, with nothing to
+regenerate, no file to keep in sync, and no reconciliation step to run
+after a restore. `from_input(id:)` also exists and is documented (in
+the function's own bytecode) as faster — deliberately not used here,
+since speed was never the constraint and title-based resolution is what
+survives reconstruction.
+
+**This was derived from static analysis of the installed `graylog.jar`,
+not from a live pipeline-rule execution** (no admin API access was
+available to this delivery to compile/run a rule and observe it). Its
+live correctness is proven by Rogue's execution of the runbook's step
+6 (identity enforcement working at all) and, most importantly, step 11
+(the content-pack delete/reinstall/reconstruction proof, which is
+specifically designed to prove `from_input(name:)` still resolves
+correctly against brand-new, never-before-seen input ids).
+
+Graylog 7.1.9 does also fully support the Lookup Table / data-adapter
+function family (`lookup()`, `lookup_value()`, `lookup_string_list()`,
+etc. — also confirmed present by jar inspection) in case a future PID
+needs it for something `from_input(name:)` can't express; it was not
+needed here and was not built.
+
+## Why identity mismatches are quarantined, never overwritten (FF-PRODUCER-IDENTITY-01)
+
+The discovery phase's own experiment proved server-side *overwrite* of
+a conflicting producer identity was technically possible. The Architect
+explicitly chose quarantine over overwrite for the real
+implementation, and this delivery follows that without exception: a
+mismatch never repairs `producer_system_id`/`producer_component_id` —
+it sets two new, FALCON/Graylog-pipeline-owned diagnostic fields
+(`falcon_identity_mismatch: true`, `falcon_security_reason: "<human-
+readable cause>"`) *alongside* the producer's own unmodified (and
+false) claim, and routes the message to `FALCON: Quarantine` exactly
+like every other PID-03 structural violation. The false claim is
+preserved as evidence, not corrected — an auditor or incident
+responder must be able to see exactly what a compromised or
+misconfigured producer actually claimed. This is a new delivery-owned
+field pair, not a PID-01 envelope amendment — PID-01 is closed, and no
+generic reason/diagnostic field exists there (only TRON's own
+business-specific `rejection_reason`/`exit_reason`). It follows the
+exact pattern PID-03 already established for `falcon_validity`,
+`falcon_stage1_evaluated`, `falcon_bad_causation_id_shape`, etc.
+
+## Ordinary FalconEvent vs. HELIOS Trade Suggestion signing — why no application-level signature here
+
+`docs/security/FALCON-HELIOS-TRIGGER-SIGNING.md` (PID-08, separate PID)
+covers HELIOS Trade Suggestions specifically, which carry their own
+cryptographic signature verified by the *consumer* (TRON) at admission
+time — a different trust boundary entirely (consumer-side trust in a
+specific evidence family's authenticity/integrity over its full
+lifetime, independent of transport). PID-04's mTLS + dedicated-input +
+`from_input(name:)` model answers a narrower, transport-time-only
+question — *did this connection, right now, belong to the producer it
+claims to be* — for **every** producer and **every** evidence family,
+not just Trade Suggestions. The two mechanisms are complementary, not
+redundant: PID-04 does not add a general application-level signature
+scheme for ordinary evidence, because the Architect's selection gate for
+this PID was explicit that a common, Graylog-native/network-native
+mechanism should be preferred over inventing bespoke cryptography per
+evidence family, and HELIOS Trade Suggestions already have their own
+narrower, already-governed signing mechanism where that extra assurance
+is actually needed (an executable trading signal, not observational
+evidence).
+
+## TRON governed identity vs. runtime hostname
+
+Per `docs/contracts/TRON-FALCON-CONTRACT.md`'s FF-TRON-IDENTITY-01:
+`producer_component_id` (e.g. `tron.execution_engine`) is the stable,
+governed trader identity — PID-04 binds this to a dedicated input.
+`producer_instance_id` (a TRON's operational hostname/runtime
+placement) is a *different*, non-identity-bearing field that this PID
+does not authenticate or bind to anything — a TRON entity's hostname
+can change across redeployment/migration without needing a new
+dedicated input, precisely because the input binding is on the governed
+component identity, never the hostname. This delivery used the two
+*already-registered* TRON components
+(`tron.execution_engine`, `tron.discovery_service`) as its two DEV TRON
+identities rather than inventing new ones (e.g. `tron.vantage_xau_01`)
+— see this PID's forge report for the full reasoning: inventing new,
+unregistered component ids would have required either a PID-01 registry
+change (explicitly out of scope, PID-01 is closed) or left new DEV
+traffic incorrectly quarantined by PID-03's own pre-existing "unknown
+component" check for a reason unrelated to identity enforcement. This
+was raised as a deviation from the brief's literal example and approved
+by the Architect.
+
+## Certificate issuance, placement, rotation, and revocation
+
+**Pattern:** a directory of individually-trusted leaf certificates, no
+CA (per PID-04 discovery: this gives per-producer revocation without
+any CA reissue). DEV material lives at
+`deploy/secrets/pid04-mtls/` (never committed — already covered by this
+repo's existing `**/secrets/**` `.gitignore` rule, confirmed via `git
+check-ignore -v` rather than assumed):
+
+| Path | Contents |
+|---|---|
+| `server/server.{crt,key}` | One self-signed server identity (CN=`graylog-falcon`, SAN covers `graylog-falcon`/`localhost`/`192.168.11.10`/`127.0.0.1`), shared across all 5 dedicated inputs — they're all served by the same Graylog server. |
+| `clients/<producer>.{crt,key}` | One self-signed client leaf per producer identity (`hermes`, `ares`, `helios`, `tron_execution_engine`, `tron_discovery_service`), `clientAuth` EKU. |
+| `trusted-leafs/<producer>.crt` | Public cert only, one per producer — the source copied into each dedicated input's own, separate trust directory inside the container (see below). |
+
+**Issuance (DEV):** `openssl req -x509 -newkey rsa:2048 -nodes -sha256`,
+3650-day validity, no passphrase. Keys `chmod 600`, certs `chmod 644`,
+directories `chmod 700`.
+
+**Placement (inside `graylog-falcon`):** copied via `docker cp` into
+`/usr/share/graylog/data/pid04-mtls/` — inside the pre-existing named
+volume `graylog-falcon-journal`, which already survives container
+recreation with **zero `docker-compose.yml` changes**. Each dedicated
+input's `tls_client_auth_cert_file` points at its **own** subdirectory
+under `.../pid04-mtls/trust/<producer>/`, containing **only** that one
+producer's leaf cert — confirmed via jar inspection that Graylog's
+`AbstractTcpTransport$Config.tls_client_auth_cert_file` field
+explicitly supports "File or Directory", which is what makes true
+per-input, per-producer trust isolation possible (not one shared
+trust-all-5 file). Ownership must be `graylog:graylog` (uid/gid 1100,
+the container's actual runtime user — confirmed via `docker exec
+graylog-falcon id`), since `docker cp` from the host writes as root and
+Graylog cannot read a key file it doesn't have permission for. See
+`docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md` step 1
+for the exact commands.
+
+**Rotation:** generate a new leaf for the producer, add it *alongside*
+the existing one in that producer's own trust directory (both valid
+during a grace period), cut the producer over, then remove the old
+leaf. No CA reissue, no effect on any other producer's trust directory.
+
+**Revocation (confirmed via live execution, Rogue's runbook step 7):**
+remove the one producer's leaf cert file from its own trust directory —
+**no restart, no input config-apply, no hot-reload trigger of any kind
+is needed.** Unlike PID-03's own finding for a comparable Graylog
+config change (a `PUT` to an input's own config causes a documented
+STOPPING→RUNNING cycle, not a true hot-reload), `tls_client_auth_cert_file`
+is a filesystem-backed trust directory Graylog's TLS layer re-reads on
+its own: the revoked cert was rejected on the **very next** TLS
+handshake attempt after deletion, with no action taken on the input
+object at all. Verified via `docker logs graylog-falcon` showing an
+immediate `SSLHandshakeException` for that attempt, and a confirmed-
+absent search-index result for it. The other 4 producers' inputs and
+trust directories were confirmed unaffected by the `ares` revocation —
+per-producer revocation with zero CA reissue and zero collateral impact,
+exactly as designed.
+
+## The TLS 1.3 client-side false-success testing trap
+
+Carried over from PID-04 discovery and **independently reconfirmed by
+this delivery**, locally, without touching Graylog at all: a throwaway
+`openssl s_server` was started using the actual generated `server.crt`/
+`server.key`, configured to trust only the `hermes` leaf. Three
+Python-`ssl`-based client attempts (this delivery's own
+`sender.send_gelf_tcp_tls`/`build_mtls_context` code, the same code the
+FTE test suite uses) were each made in turn:
+
+| Client-observed result | Server log (authoritative) |
+|---|---|
+| No client cert offered → **"send completed without exception"** | `peer did not return a certificate` — **rejected** |
+| Untrusted cert (`ares`, not in trust file) → **"send completed without exception"** | `certificate verify failed` — **rejected** |
+| Plaintext to the TLS port → **"send completed without exception"** | `wrong version number` (record-layer error) — **rejected** |
+| Authorised cert (`hermes`, in trust file) → "send completed without exception" | `verify return:1`, `CN = hermes` — **accepted, correctly** |
+
+The first three rows are the trap: the client believed every single
+attempt succeeded. Only the server log told the truth. **Every PID-04
+TLS/mTLS test — in the runbook and in
+`tests/fte/run_pid03_tests.py`'s `pid04_run_connection_level_test`
+function — is written to never treat a client-side lack-of-exception as
+a pass; the only authoritative signals are `docker logs graylog-falcon`
+and real message presence/absence via the Graylog search API.**
+
+**Confirmed against the real `graylog-falcon` server (Rogue's runbook
+step 6), reproduced identically 3 separate times** (initial run,
+post-test-fixture-bugfix run, post-full-reconstruction run with
+brand-new input ids) — the trap held exactly as this delivery's local
+`openssl s_server` self-test predicted, and the real Netty/OpenSSL
+error class names (canonical reference shapes for any future PID-04
+work) are:
+
+| Scenario | Real Graylog server-log exception (authoritative) | Matches the local self-test prediction? |
+|---|---|---|
+| `plaintext` to a TLS port | `NotSslRecordException: not an SSL/TLS record` | Yes — same class of error (`wrong version number` in openssl's own wording) |
+| `no_client_cert` | `OpenSslHandshakeException: ... PEER_DID_NOT_RETURN_A_CERTIFICATE` | Yes — same underlying condition, Netty's own wording |
+| `untrusted_client_cert` | `SSLHandshakeException: General OpenSslEngine problem` | Partially — Netty/OpenSSL's real message is generic here, not the specific "certificate verify failed" string `openssl s_server` prints for the same underlying condition. This is a genuine wording difference between two different TLS stacks reporting the same rejection, not a bug in the test or in Graylog. |
+
+The client-side observation was, once again, "completed without a
+client-side exception" in every one of these three real runs — the
+TLS-1.3-lies behaviour is not a local-self-test artifact, it is exactly
+what the real server produces too.
+
+## Connection-level observability gap (deferred to PID-13)
+
+Per-connection TLS/mTLS failure observability (structured logging,
+metrics, alerting on repeated handshake failures from a given source)
+is explicitly out of scope here and deferred to PID-13, exactly as
+discovery already established. Today, a rejected connection is visible
+only via `docker logs graylog-falcon`'s raw text — there is no FALCON
+evidence stream, metric, or alert for it. This is a known limitation,
+not an oversight.
+
+## Why middleware was rejected
+
+`docs/security/FALCON-PRODUCER-AUTHENTICATION.md`'s selection gate is
+explicit: no bespoke FALCON authentication gateway, no per-producer
+custom scheme, no Redis, no new database. Every mechanism in this PID
+— TLS, mTLS with a per-input trust directory, Graylog's own
+`gl2_source_input`, the native `from_input(name:)` pipeline function —
+is Graylog-native or network-native. The only genuinely new component
+is a small set of pipeline-rule DSL statements (the identity-check
+rules) and DEV-generated certificate files, both explicitly permitted
+("custom only where genuinely necessary and evidenced").
+
+## Input titles are now governed configuration, not cosmetic strings
+
+Because `from_input(name:)` resolves by exact title at evaluation time,
+each dedicated input's title **is** part of the security boundary: a
+rename (even a punctuation change) silently breaks that rule's identity
+check with no error anywhere — the rule would simply never match, and
+that input's traffic would stop being subject to identity enforcement
+at all, silently. Treat a dedicated input's title with the same care as
+a schema field: **changing it is a security-relevant change**,
+requiring the same review as editing a pipeline rule's condition
+directly, and must be paired with updating the corresponding
+`from_input(name: "...")` string in the pipeline rule and the
+content-pack file in the same change.
+
+## Content pack: extended in place, not duplicated
+
+`deploy/content-packs/falcon-pid03-ingestion-v1.json` was edited
+in-place for PID-04 (same content-pack `id`) rather than creating a
+second, separate pack file. Reasoning: this PID's changes are not
+purely additive — they *modify* PID-03's own already-installed pipeline
+entity (its stage-1 rule list) and all 7 of its already-installed
+stage-2 routing rule entities (each gains one more inlined OR
+condition, exactly mirroring PID-03's own established
+one-condition-per-line style) — a second, independent pack with new
+entity ids would create duplicate pipeline/rule objects with colliding
+titles rather than updating the existing ones, defeating both this
+PID's own "extend, don't duplicate" instruction and PID-03's own
+established convention of resolving everything by name/title.
+
+Revision history:
+- **rev 1** — PID-03's original pack (1 shared unauthenticated input,
+  the pipeline, its 21 rules, 7 streams).
+- **rev 2** — PID-04's first cut: added the 5 dedicated mTLS inputs and
+  7 identity-check rules, extended the pipeline and the 7 routing
+  rules. Left the pre-existing shared `FALCON Producer Ingest (GELF
+  TCP)` input entity present and byte-for-byte unchanged, on the
+  reasoning that its removal from the live server was a deliberate,
+  separate, manual API step, never an implicit content-pack side
+  effect.
+- **rev 3** (current) — **removes the shared input entity from the
+  pack entirely**, per FF-LEGACY-INGRESS-01 below. Rev 2's reasoning
+  turned out to be wrong in exactly the way PID-04's own reconstruction
+  proof exists to catch: see "Content-pack revision-install semantics"
+  below for the full history and the corrected design.
+
+## Content-pack revision-install semantics — confirmed via live execution
+
+Two load-bearing platform behaviours were discovered only through
+Rogue's actual privileged installation (not something this delivery's
+static jar inspection could have surfaced), and every future FALCON
+content-pack revision must account for both.
+
+**1. `pipeline_rule` entities are cross-revision source-compared and
+protected from silent overwrite; `stream` and `input` entities are not.**
+Installing rev 2 (which only *modified* the 7 stage-2 rules + the
+pipeline entity, and left every stream and the old shared input
+byte-identical) threw:
+
+```
+DivergingEntityConfigurationException: Different pipeline rule sources
+for pipeline rule with name "FALCON - route INVALID to Quarantine"
+```
+
+Root cause: Graylog's `PipelineRuleFacade.findExisting()` does a
+cross-revision title+source comparison before install and refuses to
+silently overwrite a rule whose source text has diverged from what's
+already live — a genuine safety feature, not a bug. **Fix:** before
+installing a revision that modifies an existing rule's source, delete
+that specific rule (and the pipeline entity, since its own `source`
+field — the stage list — also changed) via the API first; every
+*unchanged* rule matches cleanly by title+source and is reused as-is,
+no deletion needed for those.
+
+**`StreamFacade` and `InputFacade` do not do this cross-revision
+matching at all.** Installing rev 2 blindly created 7 duplicate,
+disabled, wrong-index-set streams and a duplicate, port-conflicting,
+FAILED-state copy of the (then still pack-defined) old shared input —
+even though *none* of those entities' content had changed between rev 1
+and rev 2. This is not a one-time fresh-install quirk (see the "known
+limitation" section near the top of this file for that, PID-02's own
+separate finding); it happened again, identically, during the step 11
+reconstruction proof's reinstall, and had to be cleaned up again.
+
+**Practical rule for any future FALCON content-pack revision that
+touches a `pipeline_rule`/`pipeline` entity:** expect blind duplication
+on every `stream`/`input` entity **still defined in the pack** regardless
+of whether its content changed, and always verify+clean up stream/input
+counts by title after *any* content-pack install or reinstall (over an
+environment where those entities already exist) — never only after a
+fresh one. As of rev 3 this no longer applies to the legacy shared
+input specifically, since it is no longer in the pack at all (see
+finding 2 below) — but it still applies to the 7 streams, which remain
+unchanged and pack-defined.
+
+**2. A content-pack-defined entity that is manually decommissioned live
+is not durably gone — it reappears on the next reinstall, because the
+pack still defines it.** This finding has two parts: what rev 1/rev 2
+got wrong (historical — genuinely valuable, kept in full below) and
+what rev 3 does about it (the corrected, load-bearing design).
+
+**Historical discovery (rev 1 → rev 2, superseded as of rev 3):** rev 2
+left the pre-existing shared `FALCON Producer Ingest (GELF TCP)` input
+entity present, byte-for-byte unchanged, in the pack — reasoning that
+its removal from the live server was a deliberate, separate, manual API
+step (runbook step 10), never an implicit content-pack side effect.
+That reasoning was wrong in exactly the way this PID's own
+reconstruction proof exists to catch: the old shared input, deliberately
+deleted live in runbook step 10, **reappeared** (as a fresh entity, new
+id) when rev 2 was reinstalled for the step 11 reconstruction proof,
+and had to be deleted a second time. Root cause: a content-pack install
+only ever *creates or updates* what the pack defines — it has no
+concept of "this entity used to exist and was deliberately removed
+live," so nothing about a live-only deletion is recorded anywhere the
+content-pack mechanism can see. This is genuinely valuable to have
+learned: it's what proved "delete it from the running server" is never
+sufficient for a security-relevant entity's removal to be durable, and
+it's why FF-LEGACY-INGRESS-01 below is phrased the way it is (about the
+authoritative *artifact*, not the live state).
+
+**Final corrected design (rev 3, current):**
+
+> **FF-LEGACY-INGRESS-01:** The deprecated shared unauthenticated GELF
+> TCP input MUST NOT exist in the authoritative PID-04 reconstructed
+> runtime. It MUST NOT remain defined in the authoritative content
+> pack. Secure reconstruction must produce only governed dedicated
+> producer inputs.
+
+The Architect's ruling on reviewing rev 2: **do not rely on post-install
+deletion for security** — security must rest on the authoritative
+artifact, not on remembering to run a manual cleanup step after every
+install. As of rev 3, the shared input entity is removed from
+`falcon-pid03-ingestion-v1.json` entirely (not merely left-present-but-
+decommissioned). A genuine from-scratch reconstruction — delete
+everything, reinstall from rev 3 — now produces exactly 5 dedicated
+mTLS inputs and nothing else, **by construction**, with no manual step
+and nothing to forget.
+
+**This is a different mechanic from the update-in-place case documented
+in finding 1 above, and the distinction matters for anyone doing a live
+in-place upgrade later versus a disaster-recovery rebuild:**
+- **From-scratch reconstruction** (delete every FALCON input/pipeline/
+  rule, reinstall from rev 3): guaranteed clean by construction — the
+  legacy input is never created, because nothing in rev 3 defines it.
+  This is what PID-04's own reconstruction test proves.
+- **Live in-place upgrade of an already-provisioned rev 1/rev 2
+  environment to rev 3**: installing rev 3 will **not** retroactively
+  delete an already-installed live copy of the legacy input. Dropping
+  an entity from a revision is not the inverse of adding one — the
+  content-pack installer only ever creates/updates entities the *new*
+  revision defines; it has no "entity removed, please delete the live
+  object" semantics. Any environment that ever had rev 1 or rev 2
+  installed still needs **one manual, one-time deletion** of the
+  already-live legacy input after upgrading to rev 3 — after which no
+  future reinstall of rev 3 will ever recreate it, since it's gone from
+  both the live server and the authoritative pack.
+
+## Stage-2 rules: updated all 7, not refactored to a shared flag read
+
+PID-03 already proved that rules within the *same* pipeline stage
+cannot see each other's field mutations — which is exactly why its own
+7 stage-2 routing rules each already inline the full 10-condition
+"is this invalid" check rather than reading a shared `falcon_validity`
+field set by a sibling same-stage rule. The new identity-check rules
+live in **stage 1**, one stage earlier, so stage 2 reading
+`falcon_identity_mismatch` is a later stage reading an earlier stage's
+mutation — the case PID-03 already proved works. Given that, updating
+all 7 stage-2 rules to add one more inlined `||` condition (mirroring
+the existing 10, verbatim in style) was the straightforward, low-risk,
+already-established-pattern choice; a "cleaner" restructuring wasn't
+attempted since it isn't actually cleaner — it would just be
+reproducing the pattern PID-03 already chose for exactly this reason.
+
+## Test-harness modes: `pid03` (historical) vs `pid04` (current regression authority)
+
+`tests/fte/run_pid03_tests.py`'s original bare/default invocation (the
+`pid03` mode, `main()`) sends fixtures through the shared GELF TCP input
+on port 12401. As of PID-04 rev 3 (FF-LEGACY-INGRESS-01), that input is
+permanently removed from the authoritative content pack and the
+authoritative reconstructed runtime — port 12401 no longer exists to
+connect to. **`pid03` mode is retired as a live regression check; it is
+kept, unmodified, as PID-03's own historical proof** (see the "FTE
+(FALCON Test Engine) bootstrap" section above and
+`tests/fte/last_run_report.json`, neither deleted nor altered by
+PID-04). It was never CI-invoked (CI only runs the PID-01 static/
+documentation checks — `.github/workflows/ci.yml` has no job that runs
+the live FTE suite against a Docker network), so retiring it carries no
+CI risk.
+
+**`pid04` mode (`main_pid04()`) is the current ingestion regression
+authority** going forward — it exercises the real, authoritative
+5-dedicated-input topology end to end (valid traffic, identity spoofing,
+correct-identity controls, connection-level TLS negatives) and is what
+any future PID touching this pipeline should re-run to prove
+non-regression, not `pid03` mode. Run via:
+`python3 tests/fte/run_pid03_tests.py pid04` (or `all`, which still runs
+`pid03` mode too, for anyone who wants the full historical comparison
+run against an environment that still happens to have port 12401 open —
+though no such environment is expected to exist going forward).
+
+## Previously-unverified details — now confirmed via live execution
+
+This delivery originally flagged four details it could not verify
+without Graylog admin access, rather than silently assuming an answer.
+Rogue's full privileged execution of
+`docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md` (every
+step passed, including the delete-and-reinstall reconstruction proof)
+has since confirmed all four, and surfaced 3 further findings this
+delivery's own static analysis could never have reached (see the
+"Content-pack revision-install semantics" section above for the two
+biggest ones). Recorded here for anyone reading this file rather than
+re-deriving any of it:
+
+1. **`tls_client_auth` accepted string:** confirmed literally
+   `"required"` via `GET /api/system/inputs/types/
+   org.graylog2.inputs.gelf.tcp.GELFTCPInput` — the jar-inspection-
+   derived guess was correct, no content-pack fix was needed.
+2. **Revision-update fixups:** a revision bump does **not** need PID-03's
+   fresh-install stream fixups (disabled / wrong index set / pipeline
+   not connected) re-applied to streams whose content didn't change —
+   they're left untouched by `StreamFacade`. The actual blocker on a
+   rule/pipeline-modifying revision turned out to be the
+   `DivergingEntityConfigurationException` documented above, which is a
+   materially different (and more load-bearing) finding than the
+   question originally asked.
+3. **Certificate revocation:** confirmed **immediate** — no restart, no
+   input config-apply, no hot-reload trigger of any kind needed; see
+   the "Certificate issuance, placement, rotation, and revocation"
+   section above for the full confirmed behaviour and evidence.
+4. **Content-pack reinstall-after-delete path:** confirmed the plain
+   reinstall `POST` works directly, both for the original install and
+   for the full step-11 reconstruction cycle — no stale-installation-
+   record removal was ever needed.
+
+The 3 new findings (pipeline_rule vs. stream/input cross-revision
+matching, content-pack-tracked-entity resurrection on reinstall, and
+the confirmed real exception-class names for each connection-level
+negative test) are documented in full, in place, in the "Content-pack
+revision-install semantics" section and the TLS-1.3 client-side
+false-success table above — not repeated here.
+
+`docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md` has
+been updated to fold all of the above into its own steps, so a future
+re-run starts from confirmed ground truth rather than the original
+open questions.
