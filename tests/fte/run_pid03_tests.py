@@ -1,6 +1,22 @@
 """
 FALCON PID-03 -- automated positive/negative ingestion proof suite.
 
+*** PID-04 STATUS NOTE (rev 3, FF-LEGACY-INGRESS-01): the bare/default
+*** invocation of this module (main(), the "pid03" suite below) targets
+*** the shared "FALCON Producer Ingest (GELF TCP)" input on port 12401.
+*** That input has been PERMANENTLY REMOVED from the authoritative
+*** content pack and the authoritative reconstructed runtime as of
+*** PID-04 rev 3 -- port 12401 no longer exists to connect to on a
+*** correctly-reconstructed FALCON stack. This suite is RETIRED as a
+*** live regression check and kept, unmodified, purely as PID-03's own
+*** historical proof (see tests/fte/last_run_report.json and
+*** deploy/README.md's PID-03 section). It was never CI-invoked, so
+*** retiring it carries no CI risk. THE CURRENT INGESTION REGRESSION
+*** AUTHORITY IS main_pid04() below (invoke via
+*** `python3 run_pid03_tests.py pid04`) -- see deploy/README.md's
+*** "Test-harness modes: pid03 (historical) vs pid04 (current
+*** regression authority)" section for the full reasoning.
+
 Runs against the REAL, running graylog-falcon DEV stack (no mocks). It
 sends PID-01 fixtures through the real "FALCON Producer Ingest (GELF
 TCP)" input using tests/fte/sender.py, then asserts what actually
@@ -729,9 +745,15 @@ def main() -> int:
 if __name__ == "__main__":
     # Backward compatible: no args (or "pid03") runs exactly the original
     # PID-03 suite unchanged, against the shared input, for regression
-    # proof. "pid04" runs the new dedicated-input/mTLS/identity suite
-    # (requires PID-04's inputs+pipeline+certs to already be installed).
-    # "all" runs both, PID-03 first.
+    # proof. RETIRED as of PID-04 rev 3 (FF-LEGACY-INGRESS-01): that
+    # input no longer exists in the authoritative reconstructed runtime,
+    # so this mode now only works against a historical/pre-rev-3
+    # environment; kept for PID-03 historical-proof reproducibility, not
+    # deleted. "pid04" runs the dedicated-input/mTLS/identity suite
+    # (requires PID-04's inputs+pipeline+certs to already be installed)
+    # -- THIS is the current ingestion regression authority. "all" runs
+    # both, PID-03 first (will fail its connection step on a
+    # correctly-reconstructed rev-3-or-later environment -- expected).
     suite = sys.argv[1] if len(sys.argv) > 1 else "pid03"
     if suite == "pid03":
         raise SystemExit(main())

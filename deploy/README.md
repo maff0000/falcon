@@ -343,6 +343,14 @@ docker run --rm --network falcon-net \
   python:3.11-slim python3 /repo/tests/fte/run_pid03_tests.py
 ```
 
+> **PID-04 update:** as of PID-04 rev 3, the shared input this bare
+> invocation targets (port 12401) has been permanently removed from the
+> authoritative content pack (FF-LEGACY-INGRESS-01) — this command and
+> the "Latest run" result below are preserved as PID-03's own historical
+> proof, not a live regression check. See "Test-harness modes: `pid03`
+> (historical) vs `pid04` (current regression authority)" further down
+> this file for the current equivalent.
+
 Latest run: **4/4 positive fixtures PASS** (HERMES/ARES/HELIOS/TRON, one
 each, with full field-preservation + decimal-precision proof); of the 13
 negative fixtures, **11 are natively quarantined** and 2 are documented,
@@ -704,21 +712,33 @@ content-pack file in the same change.
 ## Content pack: extended in place, not duplicated
 
 `deploy/content-packs/falcon-pid03-ingestion-v1.json` was edited
-in-place for PID-04 (same content-pack `id`, `rev` bumped 1 → 2) rather
-than creating a second, separate pack file. Reasoning: this PID's
-changes are not purely additive — they *modify* PID-03's own already-
-installed pipeline entity (its stage-1 rule list) and all 7 of its
-already-installed stage-2 routing rule entities (each gains one more
-inlined OR condition, exactly mirroring PID-03's own established
+in-place for PID-04 (same content-pack `id`) rather than creating a
+second, separate pack file. Reasoning: this PID's changes are not
+purely additive — they *modify* PID-03's own already-installed pipeline
+entity (its stage-1 rule list) and all 7 of its already-installed
+stage-2 routing rule entities (each gains one more inlined OR
+condition, exactly mirroring PID-03's own established
 one-condition-per-line style) — a second, independent pack with new
 entity ids would create duplicate pipeline/rule objects with colliding
 titles rather than updating the existing ones, defeating both this
 PID's own "extend, don't duplicate" instruction and PID-03's own
-established convention of resolving everything by name/title. The
-pre-existing shared `FALCON Producer Ingest (GELF TCP)` input entity is
-left present and byte-for-byte unchanged in this revision; its removal
-from the live server is a deliberate, separate, manual API step (see
-the runbook), never an implicit content-pack side effect.
+established convention of resolving everything by name/title.
+
+Revision history:
+- **rev 1** — PID-03's original pack (1 shared unauthenticated input,
+  the pipeline, its 21 rules, 7 streams).
+- **rev 2** — PID-04's first cut: added the 5 dedicated mTLS inputs and
+  7 identity-check rules, extended the pipeline and the 7 routing
+  rules. Left the pre-existing shared `FALCON Producer Ingest (GELF
+  TCP)` input entity present and byte-for-byte unchanged, on the
+  reasoning that its removal from the live server was a deliberate,
+  separate, manual API step, never an implicit content-pack side
+  effect.
+- **rev 3** (current) — **removes the shared input entity from the
+  pack entirely**, per FF-LEGACY-INGRESS-01 below. Rev 2's reasoning
+  turned out to be wrong in exactly the way PID-04's own reconstruction
+  proof exists to catch: see "Content-pack revision-install semantics"
+  below for the full history and the corrected design.
 
 ## Content-pack revision-install semantics — confirmed via live execution
 
@@ -751,37 +771,85 @@ no deletion needed for those.
 **`StreamFacade` and `InputFacade` do not do this cross-revision
 matching at all.** Installing rev 2 blindly created 7 duplicate,
 disabled, wrong-index-set streams and a duplicate, port-conflicting,
-FAILED-state copy of the untouched old shared input — even though
-*none* of those entities' content had changed between rev 1 and rev 2.
-This is not a one-time fresh-install quirk (see the "known limitation"
-section near the top of this file for that, PID-02's own separate
-finding); it happened again, identically, during the step 11
+FAILED-state copy of the (then still pack-defined) old shared input —
+even though *none* of those entities' content had changed between rev 1
+and rev 2. This is not a one-time fresh-install quirk (see the "known
+limitation" section near the top of this file for that, PID-02's own
+separate finding); it happened again, identically, during the step 11
 reconstruction proof's reinstall, and had to be cleaned up again.
 
 **Practical rule for any future FALCON content-pack revision that
 touches a `pipeline_rule`/`pipeline` entity:** expect blind duplication
-on every `stream`/`input` entity in the same pack regardless of whether
-its content changed, and always verify+clean up stream/input counts by
-title after *any* content-pack install or reinstall — never only after
-a fresh one.
+on every `stream`/`input` entity **still defined in the pack** regardless
+of whether its content changed, and always verify+clean up stream/input
+counts by title after *any* content-pack install or reinstall (over an
+environment where those entities already exist) — never only after a
+fresh one. As of rev 3 this no longer applies to the legacy shared
+input specifically, since it is no longer in the pack at all (see
+finding 2 below) — but it still applies to the 7 streams, which remain
+unchanged and pack-defined.
 
 **2. A content-pack-defined entity that is manually decommissioned live
-(deleted via the API, outside the pack's own installation-record
-tracking) reappears the next time that same content pack is reinstalled
-— because the pack still defines it.** Proven directly: the old shared
-`FALCON Producer Ingest (GELF TCP)` input, deliberately deleted in
-runbook step 10, reappeared (as a fresh entity, new id) when rev 2 was
-reinstalled for the step 11 reconstruction proof, and had to be deleted
-a second time. **If FALCON ever wants a content-pack-tracked entity
-permanently gone, it must be removed from the content-pack JSON file
-itself** — a live-only deletion is not durable against any future
-reinstall of that pack, including a routine disaster-recovery restore.
-(The old shared input entity is still present, byte-for-byte unchanged,
-in `falcon-pid03-ingestion-v1.json` rev 2 — a deliberate choice, see
-"Content pack: extended in place, not duplicated" above — so this
-resurrection is expected behaviour given that choice, not a defect; a
-future PID that wants it gone for good should remove the entity from
-the JSON, not just delete it live.)
+is not durably gone — it reappears on the next reinstall, because the
+pack still defines it.** This finding has two parts: what rev 1/rev 2
+got wrong (historical — genuinely valuable, kept in full below) and
+what rev 3 does about it (the corrected, load-bearing design).
+
+**Historical discovery (rev 1 → rev 2, superseded as of rev 3):** rev 2
+left the pre-existing shared `FALCON Producer Ingest (GELF TCP)` input
+entity present, byte-for-byte unchanged, in the pack — reasoning that
+its removal from the live server was a deliberate, separate, manual API
+step (runbook step 10), never an implicit content-pack side effect.
+That reasoning was wrong in exactly the way this PID's own
+reconstruction proof exists to catch: the old shared input, deliberately
+deleted live in runbook step 10, **reappeared** (as a fresh entity, new
+id) when rev 2 was reinstalled for the step 11 reconstruction proof,
+and had to be deleted a second time. Root cause: a content-pack install
+only ever *creates or updates* what the pack defines — it has no
+concept of "this entity used to exist and was deliberately removed
+live," so nothing about a live-only deletion is recorded anywhere the
+content-pack mechanism can see. This is genuinely valuable to have
+learned: it's what proved "delete it from the running server" is never
+sufficient for a security-relevant entity's removal to be durable, and
+it's why FF-LEGACY-INGRESS-01 below is phrased the way it is (about the
+authoritative *artifact*, not the live state).
+
+**Final corrected design (rev 3, current):**
+
+> **FF-LEGACY-INGRESS-01:** The deprecated shared unauthenticated GELF
+> TCP input MUST NOT exist in the authoritative PID-04 reconstructed
+> runtime. It MUST NOT remain defined in the authoritative content
+> pack. Secure reconstruction must produce only governed dedicated
+> producer inputs.
+
+The Architect's ruling on reviewing rev 2: **do not rely on post-install
+deletion for security** — security must rest on the authoritative
+artifact, not on remembering to run a manual cleanup step after every
+install. As of rev 3, the shared input entity is removed from
+`falcon-pid03-ingestion-v1.json` entirely (not merely left-present-but-
+decommissioned). A genuine from-scratch reconstruction — delete
+everything, reinstall from rev 3 — now produces exactly 5 dedicated
+mTLS inputs and nothing else, **by construction**, with no manual step
+and nothing to forget.
+
+**This is a different mechanic from the update-in-place case documented
+in finding 1 above, and the distinction matters for anyone doing a live
+in-place upgrade later versus a disaster-recovery rebuild:**
+- **From-scratch reconstruction** (delete every FALCON input/pipeline/
+  rule, reinstall from rev 3): guaranteed clean by construction — the
+  legacy input is never created, because nothing in rev 3 defines it.
+  This is what PID-04's own reconstruction test proves.
+- **Live in-place upgrade of an already-provisioned rev 1/rev 2
+  environment to rev 3**: installing rev 3 will **not** retroactively
+  delete an already-installed live copy of the legacy input. Dropping
+  an entity from a revision is not the inverse of adding one — the
+  content-pack installer only ever creates/updates entities the *new*
+  revision defines; it has no "entity removed, please delete the live
+  object" semantics. Any environment that ever had rev 1 or rev 2
+  installed still needs **one manual, one-time deletion** of the
+  already-live legacy input after upgrading to rev 3 — after which no
+  future reinstall of rev 3 will ever recreate it, since it's gone from
+  both the live server and the authoritative pack.
 
 ## Stage-2 rules: updated all 7, not refactored to a shared flag read
 
@@ -798,6 +866,33 @@ the existing 10, verbatim in style) was the straightforward, low-risk,
 already-established-pattern choice; a "cleaner" restructuring wasn't
 attempted since it isn't actually cleaner — it would just be
 reproducing the pattern PID-03 already chose for exactly this reason.
+
+## Test-harness modes: `pid03` (historical) vs `pid04` (current regression authority)
+
+`tests/fte/run_pid03_tests.py`'s original bare/default invocation (the
+`pid03` mode, `main()`) sends fixtures through the shared GELF TCP input
+on port 12401. As of PID-04 rev 3 (FF-LEGACY-INGRESS-01), that input is
+permanently removed from the authoritative content pack and the
+authoritative reconstructed runtime — port 12401 no longer exists to
+connect to. **`pid03` mode is retired as a live regression check; it is
+kept, unmodified, as PID-03's own historical proof** (see the "FTE
+(FALCON Test Engine) bootstrap" section above and
+`tests/fte/last_run_report.json`, neither deleted nor altered by
+PID-04). It was never CI-invoked (CI only runs the PID-01 static/
+documentation checks — `.github/workflows/ci.yml` has no job that runs
+the live FTE suite against a Docker network), so retiring it carries no
+CI risk.
+
+**`pid04` mode (`main_pid04()`) is the current ingestion regression
+authority** going forward — it exercises the real, authoritative
+5-dedicated-input topology end to end (valid traffic, identity spoofing,
+correct-identity controls, connection-level TLS negatives) and is what
+any future PID touching this pipeline should re-run to prove
+non-regression, not `pid03` mode. Run via:
+`python3 tests/fte/run_pid03_tests.py pid04` (or `all`, which still runs
+`pid03` mode too, for anyone who wants the full historical comparison
+run against an environment that still happens to have port 12401 open —
+though no such environment is expected to exist going forward).
 
 ## Previously-unverified details — now confirmed via live execution
 

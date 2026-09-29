@@ -12,13 +12,20 @@ All commands assume a shell on `dell-debian` (`ssh root@192.168.11.10`),
 working directory
 `/srv/falcon-worktrees/wo-PID-04-producer-connection-security`.
 
-**Status: fully executed once, end to end, every step passed** —
-including the reconstruction proof. The corrections below (steps 2, 3,
-7, 10, 11) fold in what that execution actually found, so a future
-re-run (a real disaster-recovery restore, or a later PID that touches
-this same pipeline) starts from confirmed ground truth instead of the
-original open questions. Where this document originally said "test
-empirically, don't assume," it now states the confirmed answer.
+**Status: sections 0-12 below are the historical record of the original
+end-to-end execution against content-pack rev 2** — every step passed,
+including the reconstruction proof, and the corrections folded into
+those sections (steps 2, 3, 7, 10, 11) reflect what that execution
+actually found. That execution is also what proved rev 2 itself had a
+defect: it left the deprecated shared unauthenticated input defined in
+the pack, which the Architect ruled unacceptable (FF-LEGACY-INGRESS-01)
+— **section 13 is the current, authoritative procedure**, targeting the
+corrected rev 3 pack, and supersedes step 10's "decommission" framing
+and step 11(g.1)'s "re-delete after reinstall" step. Read section 13
+before executing anything if your goal is proving/using the current
+(rev 3) design; sections 0-12 remain here because the platform-behaviour
+findings in them (steps 2, 3, 7) are still fully applicable to rev 3 —
+only the legacy-input handling in steps 10/11 is superseded.
 
 ## 0. Pre-flight — baseline evidence (capture before touching anything)
 
@@ -221,7 +228,17 @@ All 5 should show `RUNNING`. All 5 were created with `"global": true`,
 avoiding PID-02's own documented "non-global input silently never
 launches without an explicit node id" gotcha — but confirm anyway.
 
-## 5. PID-03 regression suite (must still pass via the OLD shared input)
+## 5. PID-03 regression suite (must still pass via the OLD shared input) — HISTORICAL as of rev 3
+
+**This step is only meaningful against a rev-1/rev-2 environment where
+port 12401 still exists.** As of content-pack rev 3
+(FF-LEGACY-INGRESS-01), the shared input this step targets is gone from
+the authoritative design entirely — running this against a genuinely
+rev-3-reconstructed environment will fail to connect at all (expected,
+not a regression). It is kept below as the historical procedure that
+was actually run during the original rev-2 delivery. Step 6 (`pid04`
+mode) is the current ingestion regression authority — see
+`deploy/README.md`'s "Test-harness modes" section.
 
 ```bash
 docker run --rm --network falcon-net \
@@ -347,7 +364,15 @@ baseline) throughout.
 
 Confirm an identical result to step 5's pre-restart run.
 
-## 10. Decommission the old shared input
+## 10. Decommission the old shared input (HISTORICAL — superseded by rev 3, see section 13)
+
+**This step's instruction is obsolete as of content-pack rev 3.** It is
+kept below exactly as executed because it's the historical record that
+led to the rev-3 fix (see the "Content-pack revision-install semantics"
+finding 2 in `deploy/README.md`'s PID-04 section) — do not follow
+"re-run this step after every future reinstall" (its own last paragraph,
+below) against a rev-3-or-later environment; section 13 replaces it
+with a structural fix instead of a remembered manual step.
 
 **Only after steps 5, 6, 8 and 9 all pass clean.** A shared,
 unauthenticated input left running alongside 5 authenticated dedicated
@@ -377,10 +402,11 @@ in place, not duplicated" section). Deleting it live only removes the
 *current* object; the content pack itself still defines it, so it
 **will reappear** (as a fresh entity, new id) the next time this exact
 pack is reinstalled — confirmed directly: it reappeared during step 11's
-reconstruction proof and had to be deleted a second time. If this input
-is ever meant to be gone for good, remove its entity from the
-content-pack JSON file itself; until that happens, re-run this step
-after every future reinstall.
+reconstruction proof and had to be deleted a second time. **This exact
+finding is what the Architect ruled on**: security must not rest on
+remembering to re-run this step after every future reinstall —
+FF-LEGACY-INGRESS-01 (section 13) removes the entity from the pack
+itself instead, so rev 3 and later never create it at all.
 
 ## 11. Content-pack delete-and-reinstall reconstruction proof
 
@@ -440,13 +466,19 @@ curl -su admin:<password> -X POST \
 ```
 
 **Confirmed via live execution — two more things happen here, exactly
-as they did on the very first install (step 2/3), and must be redone:**
+as they did on the very first install (step 2/3), and must be redone.
+(g.1) is HISTORICAL — this exact resurrection, against rev 2, is the
+finding that produced the FF-LEGACY-INGRESS-01 fix in rev 3 (section
+13). Against rev 3 or later, (g.1) does not apply — the entity is gone
+from the pack, so it is never recreated in the first place; (g.2)
+(stream duplication) still applies, since the 7 streams remain
+unchanged and pack-defined:**
 
 ```bash
-# (g.1) The old shared "FALCON Producer Ingest (GELF TCP)" input
-# reappears (fresh entity, new id) because it is still defined,
-# unchanged, in the content pack -- even though step 10 already deleted
-# it once. Re-delete it:
+# (g.1) [rev 2 ONLY -- historical] The old shared "FALCON Producer
+# Ingest (GELF TCP)" input reappears (fresh entity, new id) because it
+# is still defined, unchanged, in the content pack -- even though step
+# 10 already deleted it once. Re-delete it:
 OLD_INPUT_ID_2=$(curl -su admin:<password> http://192.168.11.10:9010/api/system/inputs \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print([i['id'] for i in d['inputs'] if i['title']=='FALCON Producer Ingest (GELF TCP)'][0])")
 curl -su admin:<password> -X DELETE "http://192.168.11.10:9010/api/system/inputs/${OLD_INPUT_ID_2}" -H 'X-Requested-By: pid04-rogue'
@@ -519,3 +551,84 @@ docker exec graylog-falcon sh -c 'test -r /usr/share/graylog/data/pid04-mtls/ser
 - Confirmation that the plain content-pack reinstall POST worked
   directly both times, with no stale-installation-record removal ever
   needed (steps 2 and 11g).
+
+## 13. Rev 3 — remove the legacy input from the authoritative pack (FF-LEGACY-INGRESS-01)
+
+**This section is the current, authoritative procedure — supersedes
+step 10 and step 11(g.1)'s legacy-input handling.** Context: sections
+0-12 above document the original delivery and proof against
+content-pack rev 2, which left the deprecated shared unauthenticated
+`FALCON Producer Ingest (GELF TCP)` input defined in the pack (byte-for-
+byte unchanged), reasoning that its removal from the live server was a
+separate, deliberate, manual step. Step 11's own reconstruction proof
+showed that reasoning was wrong: the entity reappeared on reinstall,
+because the pack still defined it. The Architect's ruling on review:
+**do not rely on post-install deletion for security.** Rev 3 removes
+the entity from `deploy/content-packs/falcon-pid03-ingestion-v1.json`
+entirely — see `deploy/README.md`'s PID-04 section (FF-LEGACY-INGRESS-01
+and the "Content-pack revision-install semantics" finding 2) for the
+full reasoning and the from-scratch-vs-in-place-upgrade distinction.
+
+### 13.1 One-time migration cleanup (this specific dell-debian environment only)
+
+This environment currently has a live copy of the legacy input
+(recreated during the rev-2 reconstruction test, step 11 g.1, and never
+re-deleted since). Installing rev 3 will **not** retroactively remove
+it — dropping an entity from a revision does not delete an
+already-installed live copy (the same asymmetry documented for
+stream/input duplication in step 3/11). Delete it once, explicitly,
+before or as part of the reconstruction below:
+
+```bash
+curl -su admin:<password> http://192.168.11.10:9010/api/system/inputs \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); m=[i['id'] for i in d['inputs'] if i['title']=='FALCON Producer Ingest (GELF TCP)']; print(m[0] if m else '')"
+# if a non-empty id printed:
+curl -su admin:<password> -X DELETE "http://192.168.11.10:9010/api/system/inputs/<that id>" -H 'X-Requested-By: pid04-rogue'
+```
+
+A genuinely fresh environment that never had rev 1/rev 2 installed does
+not need this step at all — reconstructing directly from rev 3 never
+creates the legacy input in the first place, which is the entire point
+of this fix.
+
+### 13.2 Full delete-everything-and-reinstall-from-rev-3 proof
+
+Identical procedure to step 11(a)-(k), with these differences:
+- Also ensure the legacy input is gone (13.1) as part of teardown, if
+  not already handled.
+- `PACK_ID` is unchanged; reinstall targets **revision 3**, not 2:
+  `POST .../content_packs/${PACK_ID}/3/installations` (same body shape
+  as before: `{"entity": {"parameters": {}, "comment": "..."}}`).
+- Step 11(g.1) does not apply here (see the historical/rev-3 split
+  already noted at that step) — after reinstalling from rev 3, do
+  **not** expect the legacy input to reappear, and confirm it doesn't.
+- Step 11(g.2) (stream duplication) still applies — the 7 streams are
+  unchanged in rev 3 and remain subject to the same `StreamFacade`
+  blind-duplication behaviour; clean up per step 3.
+
+**The proof this section exists to produce:** immediately after
+reinstalling from rev 3, `GET /api/system/inputs` must show **exactly 5
+inputs** — no `FALCON Producer Ingest (GELF TCP)`, no listener on port
+12401 at all, at any point. This is the difference between "absent
+because it was deleted" and "absent because it was never defined" —
+only the latter is what FF-LEGACY-INGRESS-01 requires, and only a
+genuine from-scratch reconstruction from rev 3 proves it.
+
+Then: re-run the full PID-04 adversarial suite (step 6) against the
+fresh ids — expect identical results to every prior run
+(4/4 + 4/4 + 2/2, exit 0). Do **not** re-run step 5 (`pid03` mode) as a
+pass/fail check — it targets port 12401, which by design no longer
+exists; if run anyway (e.g. via `all` mode for historical comparison),
+expect it to fail to connect, and record that as confirmation of the
+fix, not a defect.
+
+### 13.3 Additional evidence for this section
+
+- `GET /api/system/inputs` output immediately after the rev-3
+  reconstruction, showing exactly 5 entries and their titles.
+- Confirmation of whether 13.1's one-time migration cleanup found an
+  existing legacy input to delete (it should, on this environment) or
+  found none (which would itself be worth noting, in case an earlier
+  step already removed it).
+- The `pid04` suite's full result against the rev-3 ids.
+- IRIS unaffected, confirmed once more at this final checkpoint.
