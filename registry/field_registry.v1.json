@@ -2826,7 +2826,7 @@
     {
       "name": "regime",
       "type": "string",
-      "description": "HERMES-computed market regime classification for a signal_state snapshot (BULL_TREND/BEAR_TREND/TRANSITION/LOW_VOLATILITY), derived from EMA alignment. Confirmed against the real HERMES source (signal_builder.py's _determine_regime()), not invented.",
+      "description": "HERMES-computed market regime classification for a signal_state snapshot, sourced from the actually-live-wired path: signal_builder.py calls self._regime_detector.classify(indicators) (line 634) and emits regime=regime_result.regime_id (line 691), where RegimeDetector.classify() (utils/regime_detector.py) is the real, reachable source of this value. CORRECTED 2026-09-30 per a fresh Auditor finding (independently re-verified against the live HERMES source): the original enum/description cited signal_builder.py's own _determine_regime() (defined at line 395), which is dead code -- confirmed via direct grep that it is defined once and never called anywhere in the file. The prior 4-value enum (BULL_TREND/BEAR_TREND/TRANSITION/LOW_VOLATILITY) was a real but wrong subset; the actual reachable value set has 7 members, adding RANGING/HIGH_VOLATILITY/SAFE_FALLBACK.",
       "scope": "payload",
       "allowed_families": [
         "hermes.signal_state"
@@ -2835,8 +2835,11 @@
       "enum": [
         "BULL_TREND",
         "BEAR_TREND",
+        "RANGING",
         "TRANSITION",
-        "LOW_VOLATILITY"
+        "HIGH_VOLATILITY",
+        "LOW_VOLATILITY",
+        "SAFE_FALLBACK"
       ],
       "pattern": null,
       "unit_precision": null,
@@ -2850,18 +2853,17 @@
     {
       "name": "session",
       "type": "string",
-      "description": "HERMES-computed named trading session (london/newyork/asia/overlap_ldn_ny/off_hours), confirmed against the real HERMES source (utils/trading_hours.py's get_current_session() and utils/hermes_sessions_v1.py's SESSION_NAMES). Deliberately distinct from ares.market_status.session_state's session_id/session_state (ARES session LIFECYCLE state -- PRE_OPEN/OPEN/CLOSING/CLOSED/HOLIDAY -- is a different concept from this geographic/named session, per PID-05's own discovery-phase finding; the two must never be conflated despite the shared word 'session').",
+      "description": "HERMES-computed named trading session, sourced from the actually-live-wired path: signal_builder.py's own _get_session(timestamp) method (line 381), called at line 604 as session = self._get_session(candle.timestamp) and emitted at line 692. CORRECTED 2026-09-30 per a fresh Auditor finding (independently re-verified against the live HERMES source): the original enum/description cited utils/trading_hours.py's get_current_session(), which signal_builder.py never imports or calls. The real _get_session() implementation returns exactly 4 values keyed on UTC hour (22<=hour or hour<7 -> asia; 7<=hour<12 -> london; 12<=hour<17 -> newyork; else -> late_ny) -- none of the prior enum's overlap_ldn_ny/off_hours values are producible by this real path, and late_ny was missing entirely. Deliberately distinct from ares.market_status.session_state's session_id/ session_state (ARES session LIFECYCLE state -- PRE_OPEN/OPEN/CLOSING/CLOSED/ HOLIDAY -- is a different concept from this geographic/named session, per PID-05's own discovery-phase finding; the two must never be conflated despite the shared word 'session').",
       "scope": "payload",
       "allowed_families": [
         "hermes.signal_state"
       ],
       "required_default": null,
       "enum": [
+        "asia",
         "london",
         "newyork",
-        "asia",
-        "overlap_ldn_ny",
-        "off_hours"
+        "late_ny"
       ],
       "pattern": null,
       "unit_precision": null,

@@ -20,11 +20,11 @@
     },
     "regime": {
       "type": "string",
-      "enum": ["BULL_TREND", "BEAR_TREND", "TRANSITION", "LOW_VOLATILITY"]
+      "enum": ["BULL_TREND", "BEAR_TREND", "RANGING", "TRANSITION", "HIGH_VOLATILITY", "LOW_VOLATILITY", "SAFE_FALLBACK"]
     },
     "session": {
       "type": "string",
-      "enum": ["london", "newyork", "asia", "overlap_ldn_ny", "off_hours"]
+      "enum": ["asia", "london", "newyork", "late_ny"]
     },
     "signal_type": {
       "type": "string",

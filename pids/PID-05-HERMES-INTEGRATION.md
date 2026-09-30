@@ -2178,6 +2178,53 @@ needed a one-line update as a direct, necessary consequence of adding a
 `assertEqual(len(registered), 27)` — bumped to `28`. No other existing
 test, fixture, or registry entry was touched.
 
+**CORRECTION (2026-09-30) — `regime`/`session` enum/description fixed
+after PR #9's fresh Auditor pass, not left as originally written:** the
+paragraphs above are kept unmodified as the historical record of what
+was originally proposed and registered, matching this document's own
+established convention of never rewriting an earlier entry to look like
+it already knew the answer. The Auditor found, and the FORGE Engineer
+independently re-verified directly against the real
+`/srv/hmt-code/hermes` source before accepting the fix, that both
+original citations pointed at HERMES code **not actually wired into the
+live signal-emission path**:
+
+- `regime`'s original citation, `signal_builder.py`'s `_determine_regime()`
+  (defined at line 395), is **dead code** — confirmed via direct `grep`
+  that it is defined once and never called anywhere else in the file.
+  The real, reachable value actually comes from
+  `self._regime_detector.classify(indicators)` (line 634) →
+  `regime=regime_result.regime_id` (line 691), where `RegimeDetector`
+  (imported from `utils/regime_detector.py`) is the true source. Its
+  real reachable value set is **7 members** —
+  `BULL_TREND`/`BEAR_TREND`/`RANGING`/`TRANSITION`/`HIGH_VOLATILITY`/
+  `LOW_VOLATILITY`/`SAFE_FALLBACK` — not the original 4-member subset
+  (`RANGING`/`HIGH_VOLATILITY`/`SAFE_FALLBACK` were missing entirely).
+- `session`'s original citation, `utils/trading_hours.py`'s
+  `get_current_session()`, is **never imported or called** by
+  `signal_builder.py` at all. The real, reachable value comes from
+  `signal_builder.py`'s own local `_get_session(timestamp)` method
+  (line 381, called at line 604), which returns exactly **4 values**
+  keyed on UTC hour — `asia`/`london`/`newyork`/`late_ny` — not the
+  original 5-member set (`overlap_ldn_ny`/`off_hours` are never
+  producible by this real path, and `late_ny` was missing entirely).
+
+**Impact, now fixed:** because both fields are strict JSON-Schema `enum`
+arrays, any real `signal_builder.py` output would have failed schema
+validation the moment real publication was ever wired — masked so far
+only because Stage 1's own testing used synthetic FTE fixtures, never
+real `signal_builder.py` output. `registry/field_registry.v1.json`'s
+`regime`/`session` entries (enum + description, now citing
+`RegimeDetector.classify()` / `signal_builder.py`'s own `_get_session()`
+respectively) and `schemas/payloads/hermes/signal_state.v1.schema.json`'s
+matching `enum` arrays have both been corrected to the real, evidenced
+value sets above. The committed valid fixture
+(`tests/fixtures/valid/hermes_signal_state.json`, `regime: "BULL_TREND"`,
+`session: "london"`) needed **no change** — both values remain valid
+members of the corrected enums; re-checked explicitly, not assumed. Full
+unit test suite (27/27) and `tests.validator.cli` (ALL CHECKS PASSED)
+re-run after the fix, confirming nothing else broke.
+
 ## Payload schema — `schemas/payloads/hermes/signal_state.v1.schema.json`
 
 Deliberately minimal, per the mandate's own "avoid separate schemas for
