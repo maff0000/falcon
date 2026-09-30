@@ -1485,6 +1485,28 @@ residue this test also produced is explained below, and is not a defect).
   not part of the original minimal proposal — see finding #1 below for
   why it turned out to be load-bearing, not optional).
 
+**Exact Custom Field Mapping API call — verbatim, live-confirmed (recorded
+here precisely, not just described in prose):** the field names that
+actually work are `"index_sets"` (plural, a list) and `"rotate"` — **not**
+`"index_set_ids"` or `"rotate_immediately"`, which the API rejects
+(`"Unable to map property index_set_id..."`). The call below is the exact
+one Rogue ran live against the isolated "PID-05 Binary DEV Test" index set
+described above:
+
+```bash
+curl -su admin:<password> -X PUT http://192.168.11.10:9010/api/system/indices/mappings \
+  -H 'Content-Type: application/json' -H 'X-Requested-By: pid05-rogue' \
+  -d '{"index_sets": ["<index_set_id>"], "field": "pid05_binary_payload", "type": "binary", "rotate": true}'
+```
+
+Success response shape: `{"<index_set_id>":{"field_name":"...","type":"binary","origin":"OVERRIDDEN_INDEX","is_reserved":false}}`.
+This exact syntax (only the field name and index-set id differ — the real
+target field is `hermes_signal_original_payload` on `falcon-evidence_0`,
+per the HELM handover brief) is what HELM must use for the Stage 1 storage
+action; the brief has been corrected to match this live-confirmed call
+rather than the earlier, API-rejected `index_set_ids`/`rotate_immediately`
+field names.
+
 ### Results
 
 All sends were real mTLS through HERMES's own actual PID-04 dedicated
@@ -2086,3 +2108,507 @@ Section 10 (network and authentication) already gave.
   `192.168.11.10:12411` succeeds exactly as it already does from
   `falcon-net` directly — no behavioural change to the input itself,
   only its host reachability.
+
+---
+
+# Stage 1 implementation — hermes.signal_state / hermes.signal_engine (genuine PID-01 amendment)
+
+**Status: this is real implementation, authorised by the Architect as
+Stage 1 of a 4-stage plan — not another proposal.** Approved, final
+names for Stage 1: evidence family `hermes.signal_state`, producer
+component `hermes.signal_engine`. Everything below was built by the
+FORGE Engineer and verified against this project's own actual test
+suite before hand-off; live privileged execution (content-pack install,
+the FTE test suite, the HELM handover actions) remains Rogue's/HELM's
+own work, per the same split as every prior round of this PID.
+
+## Registry additions
+
+Read the live registries first, then extended precisely:
+
+- **`registry/event_family_registry.v1.json`**: new live family
+  `hermes.signal_state`, system `hermes`, `evidence_class:
+  DETERMINISTIC_DERIVATION` (per this document's own earlier D.1
+  proposal), one registered type (`indicator_regime_snapshot`), schema
+  file `payloads/hermes/signal_state.v1.schema.json`,
+  `required_payload_fields: ["signal_natural_key"]` only — every other
+  searchable field is optional, per the mandate's own explicit
+  instruction.
+- **`registry/system_component_registry.v1.json`**: new component
+  `hermes.signal_engine` added to the `hermes` system's component list.
+- **`registry/field_registry.v1.json`**:
+  - `instrument_id` and `timeframe`'s existing `allowed_families`
+    extended to include `hermes.signal_state` — not renamed, not
+    restructured, exactly as instructed.
+  - `correlation_id`: no change (already universal/envelope-scope).
+  - New field `signal_natural_key` (payload scope,
+    `hermes.signal_state` only) — the schema's one required identity
+    property; see the schema section below for why this does not
+    contradict this document's own Section 9/D.6 finding.
+  - New field `regime` (payload scope, `hermes.signal_state` only),
+    enum `BULL_TREND`/`BEAR_TREND`/`TRANSITION`/`LOW_VOLATILITY` —
+    **confirmed against the real HERMES source**
+    (`signal_builder.py`'s `_determine_regime()`), not invented.
+  - New field `session` (payload scope, `hermes.signal_state` only),
+    enum `london`/`newyork`/`asia`/`overlap_ldn_ny`/`off_hours` —
+    **confirmed against the real HERMES source**
+    (`utils/trading_hours.py`'s `get_current_session()` and
+    `utils/hermes_sessions_v1.py`'s `SESSION_NAMES`). Deliberately
+    distinct from `ares.market_status.session_state`'s `session_id`/
+    `session_state` (a session *lifecycle* enum —
+    PRE_OPEN/OPEN/CLOSING/CLOSED/HOLIDAY — a different concept from this
+    geographic/named session, exactly as this document's own earlier
+    Section 4.2 finding already flagged; checked both existing fields'
+    definitions directly before deciding a new field was genuinely
+    needed, rather than guessing).
+  - New field `signal_type` (payload scope, `hermes.signal_state`
+    only), free string, **no enum imposed** — unlike `regime`/`session`,
+    this delivery found no evidenced, closed HERMES-side value set to
+    cite, and would rather leave it open than fabricate one.
+
+**Verified, not assumed:** `python3 -m unittest discover -s tests -p
+"test_*.py"` and `python3 -m tests.validator.cli` were both run against
+these exact changes before hand-off — all 27 tests pass, including the
+registry-consistency tests (every schema field registered, every
+registered field used, family-scope enforcement, no duplicate field
+names) and the full valid/invalid fixture corpus. One existing test
+needed a one-line update as a direct, necessary consequence of adding a
+28th live family: `tests/test_contracts.py`'s
+`test_all_27_live_families_have_a_valid_fixture` had a hardcoded
+`assertEqual(len(registered), 27)` — bumped to `28`. No other existing
+test, fixture, or registry entry was touched.
+
+**CORRECTION (2026-09-30) — `regime`/`session` enum/description fixed
+after PR #9's fresh Auditor pass, not left as originally written:** the
+paragraphs above are kept unmodified as the historical record of what
+was originally proposed and registered, matching this document's own
+established convention of never rewriting an earlier entry to look like
+it already knew the answer. The Auditor found, and the FORGE Engineer
+independently re-verified directly against the real
+`/srv/hmt-code/hermes` source before accepting the fix, that both
+original citations pointed at HERMES code **not actually wired into the
+live signal-emission path**:
+
+- `regime`'s original citation, `signal_builder.py`'s `_determine_regime()`
+  (defined at line 395), is **dead code** — confirmed via direct `grep`
+  that it is defined once and never called anywhere else in the file.
+  The real, reachable value actually comes from
+  `self._regime_detector.classify(indicators)` (line 634) →
+  `regime=regime_result.regime_id` (line 691), where `RegimeDetector`
+  (imported from `utils/regime_detector.py`) is the true source. Its
+  real reachable value set is **7 members** —
+  `BULL_TREND`/`BEAR_TREND`/`RANGING`/`TRANSITION`/`HIGH_VOLATILITY`/
+  `LOW_VOLATILITY`/`SAFE_FALLBACK` — not the original 4-member subset
+  (`RANGING`/`HIGH_VOLATILITY`/`SAFE_FALLBACK` were missing entirely).
+- `session`'s original citation, `utils/trading_hours.py`'s
+  `get_current_session()`, is **never imported or called** by
+  `signal_builder.py` at all. The real, reachable value comes from
+  `signal_builder.py`'s own local `_get_session(timestamp)` method
+  (line 381, called at line 604), which returns exactly **4 values**
+  keyed on UTC hour — `asia`/`london`/`newyork`/`late_ny` — not the
+  original 5-member set (`overlap_ldn_ny`/`off_hours` are never
+  producible by this real path, and `late_ny` was missing entirely).
+
+**Impact, now fixed:** because both fields are strict JSON-Schema `enum`
+arrays, any real `signal_builder.py` output would have failed schema
+validation the moment real publication was ever wired — masked so far
+only because Stage 1's own testing used synthetic FTE fixtures, never
+real `signal_builder.py` output. `registry/field_registry.v1.json`'s
+`regime`/`session` entries (enum + description, now citing
+`RegimeDetector.classify()` / `signal_builder.py`'s own `_get_session()`
+respectively) and `schemas/payloads/hermes/signal_state.v1.schema.json`'s
+matching `enum` arrays have both been corrected to the real, evidenced
+value sets above. The committed valid fixture
+(`tests/fixtures/valid/hermes_signal_state.json`, `regime: "BULL_TREND"`,
+`session: "london"`) needed **no change** — both values remain valid
+members of the corrected enums; re-checked explicitly, not assumed. Full
+unit test suite (27/27) and `tests.validator.cli` (ALL CHECKS PASSED)
+re-run after the fix, confirming nothing else broke.
+
+## Payload schema — `schemas/payloads/hermes/signal_state.v1.schema.json`
+
+Deliberately minimal, per the mandate's own "avoid separate schemas for
+individual indicators" and "avoid interpreting the JSON's trading
+content": validates only `signal_natural_key` (required) and the five
+optional searchable properties above (`instrument_id`, `timeframe`,
+`regime`, `session`, `signal_type`) — never any of HERMES's actual
+indicator values (RSI, EMAs, ATR, Bollinger Bands, support/resistance
+levels, etc.). Those live entirely in the full original HERMES JSON,
+preserved separately via the binary-field pipeline mechanism below,
+never structurally validated or interpreted by this schema at all.
+`additionalProperties: false`, matching every other family's schema
+convention exactly.
+
+**`signal_natural_key` — the one required property, reasoned through
+explicitly, not hand-waved:** this document's own Section 9/D.6 already
+established that HERMES has no natural stable *event* identity — its
+`(instrument, timeframe, timestamp)` SQL key is an upsert key, not an
+event id, and D.6 proposed deriving a deterministic `falcon_event_id`
+(UUID5) from exactly that natural key at publish time. `signal_natural_key`
+does **not** contradict that finding — it is an honest, required,
+producer-constructed string representation of that same real, already-
+existing natural key (pattern: `instrument:timeframe:produced_at_utc`,
+enforced via the schema's own regex), required so the payload always
+carries at least one concrete anchor. It is explicitly not a claim that
+HERMES has independent event identity; the eventual UUID5
+`falcon_event_id` derivation (D.6) is expected to be computed *from*
+this same field, not from a separately invented identity concept.
+
+## New PID-01 fixtures
+
+- **`tests/fixtures/valid/hermes_signal_state.json`** — realistic, not
+  fabricated-looking: `producer_component_id: hermes.signal_engine`,
+  `evidence_family: hermes.signal_state`, `evidence_type:
+  indicator_regime_snapshot`, `evidence_class: DETERMINISTIC_DERIVATION`,
+  and a payload shaped directly from this document's own earlier
+  Section 8 trace of the real `signal_builder.py` output
+  (`instrument_id: XAUUSD`, `timeframe: M5`, `regime: BULL_TREND`,
+  `session: london`).
+- **`tests/fixtures/invalid/missing_signal_natural_key.json`** —
+  identical to the valid fixture except `payload.signal_natural_key` is
+  missing entirely, with a `tests/fixtures/invalid/MANIFEST.json` entry
+  explaining exactly why (the mandatory identity field, reasoned as
+  above) — the *only* existing-file change in the entire `tests/
+  fixtures/` tree is this one new `MANIFEST.json` entry; no existing
+  fixture was touched.
+
+Confirmed via the actual test suite run above that both fixtures behave
+exactly as intended (the valid one accepted, the invalid one rejected
+for precisely its documented reason) — not merely asserted.
+
+## Content-pack / pipeline changes (rev 3 → rev 4)
+
+Read the live content-pack JSON and the actual deployed rule source
+directly before changing anything — confirmed, not assumed, that the
+stage-1 "unknown producer system"/"unknown component"/"unregistered
+evidence family" rules enumerate known values literally in their own
+DSL source (a flat chain of `to_string(...) != "..."` comparisons), not
+a runtime registry read.
+
+- **`FALCON - flag unknown producer system`**: **no change needed** —
+  `hermes` was already a recognised `producer_system_id` (HERMES has
+  had registered families since PID-01's original closure); this rule
+  only enumerates *systems*, not components or families, and was
+  already correct.
+- **`FALCON - flag unknown component`**: extended with one new line,
+  `to_string($message.producer_component_id) != "hermes.signal_engine"`,
+  in the same enumerated style as every existing entry.
+- **`FALCON - flag unregistered evidence family`**: extended with one
+  new line, `to_string($message.evidence_family) != "hermes.signal_state"`,
+  same style.
+- **Stage-2 routing: no new rule, no new stream — reused as-is, with
+  reasoning stated explicitly, not assumed:** `hermes.signal_state` is
+  a non-`.health` HERMES family. The existing `FALCON - route valid
+  HERMES evidence` rule's condition is already generic
+  (`producer_system_id == "hermes"` AND not `.health`), exactly the same
+  way it already covers `hermes.market_fact`/`market_state`/
+  `market_quality` without family-specific logic — `hermes.signal_state`
+  is already correctly covered by this existing rule with **zero
+  changes to it**. No new stream was needed or created.
+- **New stage-0 rule, `FALCON - encode hermes signal raw payload to
+  binary field`**: implements the proven `base64_encode()`+
+  `remove_field()` pattern from the earlier "Isolated native large-
+  payload proof — executed" section. Field-naming convention (permanent,
+  documented here as the standing convention for this mechanism): a
+  producer sends the full raw signal JSON as GELF additional field
+  `_hermes_signal_raw_json` (Graylog strips the leading underscore on
+  receipt, per PID-03's own already-documented convention, arriving as
+  `hermes_signal_raw_json`); the new rule `base64_encode()`s it into
+  `hermes_signal_original_payload` and `remove_field()`s the original —
+  the `remove_field()` step is restated here as load-bearing, not
+  optional, per Finding #1 above. **Scoped via `has_field(
+  "hermes_signal_raw_json")` to only messages carrying that exact
+  field** — never applied broadly to all messages or all producers, per
+  the mandate's own explicit instruction.
+- **The actual OpenSearch Custom Field Mapping (physical type
+  `binary`) is deliberately NOT applied to the live `falcon-evidence_0`
+  index set by this commit** — per the mandate's own instruction, that
+  stays a documented, precise, not-yet-executed HELM action (see the
+  new HELM handover brief below). Until it is applied,
+  `hermes_signal_original_payload` is indexed as an ordinary keyword
+  field, functionally correct up to 32,766 bytes, silently subject to
+  the already-documented failure mode 2 above that — stated plainly,
+  not left implicit.
+- **Verified nothing existing is touched:** traced every stage-1 and
+  stage-2 rule; the only two modified rules gained exactly one new
+  enumerated `!=` line each, in the existing style, with every prior
+  comparison byte-for-byte unchanged; every other producer's registered
+  family/component/routing is completely untouched. **Rogue's own live
+  install must NOT be run against the real `falcon-evidence_0` index
+  set for its FIRST proof pass** — per the mandate's own instruction,
+  test this rev-4 pack against a fresh isolated test index set first,
+  exactly like the binary-field proof. Per PID-04's own established,
+  proven precedent: because this revision *modifies* two existing rules'
+  source (and the pipeline's own stage-list source), installing rev 4
+  over an already-installed rev 3 will hit
+  `DivergingEntityConfigurationException` unless those two rules plus
+  the pipeline entity are deleted first — see
+  `docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md` step 2
+  for the exact, already-proven procedure; the same procedure applies
+  here unchanged.
+
+## Tests — `tests/fte/pid05_stage1_signal_state_tests.py`
+
+A new FTE suite (not executed by this delivery — same credential/live-
+execution boundary as every prior round) covering exactly the
+mandate's checklist: valid signal accepted with correct family/producer
+identity and instrument/timeframe searchable; optional regime/session
+searchable when supplied; missing optional context accepted, never
+rejected; the new missing-`signal_natural_key` fixture quarantined per
+existing policy; a spoofed producer identity (legitimate HERMES mTLS
+cert, false `producer_system_id` claim) quarantined with the false claim
+preserved, reusing PID-04's own proven spoof-test pattern; the complete
+original JSON preserved via the binary-field mechanism with an exact
+base64 round-trip and confirmation the original field was actually
+removed; 16/64/256/512 KiB payload behaviour as a **functional
+regression check reusing `pid05_size_probe.py`'s already-proven
+`build_realistic_payload_json()` builder directly** — explicitly not a
+fresh capacity-research pass, per the mandate's own instruction; a
+quick two-fixture regression check that `hermes.market_fact` and
+`ares.calendar.event_state` remain functional; and a closing reminder
+to confirm no IRIS impact (the script does not check this itself — a
+manual `docker ps` checkpoint, same as every prior round).
+
+**Isolated-test-first, by design, not by accident:** `--stream-name`
+and `--quarantine-stream-name` both default to the real production
+stream names, because that's what the committed pipeline actually
+routes to — but neither is hardcoded internally, and the module's own
+docstring instructs running this first against an isolated test
+setup (mirroring the binary-field proof's disposable stream/pipeline/
+index-set pattern) by overriding both arguments, before ever pointing
+this suite at the real `falcon-evidence_0`.
+
+**Self-tested locally before hand-off** (no network, matching this
+project's own established discipline): imported the module directly
+and exercised every pure-local code path — `build_signal_state_event()`
+builds a correct payload with all five optional fields present, and
+correctly produces exactly `{"signal_natural_key"}` as the only payload
+key when every optional field is explicitly omitted; the new invalid
+fixture loads correctly with `signal_natural_key` genuinely absent;
+`sender.build_gelf_message()` correctly flattens the event, including
+`_payload_json`, confirming the existing PID-03 un-flattening pipeline
+rule will correctly reconstruct it. `python3 -m py_compile` clean on
+this file and on `sender.py`/`pid05_size_probe.py` (reused, unmodified).
+
+## HELM handover brief
+
+`docs/operations/FALCON-PID05-STAGE1-HELM-HANDOVER-BRIEF.md` (new file,
+declared in `DOCUMENTATION-MANIFEST.json`, file_count bumped to 52) —
+kept as a **separate file under `docs/operations/`, not a section in
+this document**, mirroring PID-04's own successful precedent
+(`FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md`): an action-oriented,
+precise, runbook-style document HELM can execute directly, distinct
+from this file's own narrative discovery/reasoning record. Covers
+exactly the mandate's four sub-sections: **connectivity** (the
+restricted host-port-publishing `docker-compose.yml` change from the
+prior round, with acceptance criteria); **storage** (the precise,
+not-yet-applied Custom Field Mapping API call for
+`hermes_signal_original_payload` → `binary` on the real evidence index
+set, with the same verification method the DEV test already proved);
+**credentials** (confirms HERMES's durable storage is done, and hands
+over the now-near-certain loss of ARES/HELIOS/both TRON identities'
+PID-04 keys as a standing action item, so it isn't discovered the hard
+way a third and fourth time); and the **security finding**
+(`falcon-net`'s unauthenticated OpenSearch, cross-referenced from this
+document's own Section E.2, with MongoDB's confirmed-authenticated
+status stated precisely so the finding isn't over-generalised). None of
+these four actions has been executed by this delivery or by Rogue.
+
+---
+
+## Stage 1 — live verification (Rogue, live, against the real stack)
+
+**Attribution note:** everything in this section reports Rogue's own
+live execution and findings, relayed to and written up by the FORGE
+Engineer — it was not independently executed by the FORGE Engineer,
+consistent with this PID's standing execution split (FORGE Engineer
+builds/verifies offline artifacts only; Rogue performs all live,
+privileged Graylog work). Where this section states something is
+"confirmed," that means confirmed by Rogue against the real stack, not
+inferred.
+
+### Installation
+
+Content-pack rev 4 installed following the established PID-04
+precedent: the pipeline entity plus the two modified rules ("FALCON -
+flag unknown component", "FALCON - flag unregistered evidence family")
+were deleted first to avoid `DivergingEntityConfigurationException`,
+then the pack was reinstalled and the expected stream/input duplication
+artifacts (the same install-time side effect already documented in the
+PID-04 runbook) were cleaned up. Final state confirmed clean: **7
+streams, 5 inputs, 29 rules**, pipeline correctly connected to the
+Default Stream, stage structure **[4, 18, 7]** — stage 0 grew from 3 to
+4 rules for the new encode rule, exactly as designed; stage 1 (18) and
+stage 2 (7) unchanged, confirming no unintended rule was added or lost
+during the delete/reinstall cycle.
+
+### PID-04 regression
+
+Confirmed clean for **HERMES specifically** — the only producer a valid
+mTLS cert currently exists for: valid-traffic, identity-spoof, and
+connection-level tests all passed unchanged from PID-04's own baseline.
+**ARES/HELIOS/TRON could not be regression-tested** — their certs are
+the pre-existing, already-flagged (HELM handover brief, Section 3)
+lost-credential gap, not a new problem introduced by this PID. Recorded
+here as a genuine limitation on this regression check's completeness,
+not glossed over: a clean HERMES-only regression result does not, by
+itself, prove ARES/HELIOS/TRON's own stage-1/stage-2 rules are
+unaffected — though the diff review (see the Content-pack section
+above) already independently confirmed no existing rule's prior
+comparisons were altered, byte for byte.
+
+### hermes.signal_state live verification
+
+All done via direct OpenSearch queries against both the real
+`falcon-evidence_0` and a disposable isolated index+stream — not via
+the FTE harness's own automated search-based verification, which was
+blocked by a genuine Graylog quirk (see "Second finding" below, not a
+bug in the harness itself).
+
+| Mandate check | Result |
+|---|---|
+| Valid signal accepted, routed to "FALCON: HERMES evidence" | **CONFIRMED** — multiple messages, `falcon_validity: VALID`, correct stream membership |
+| Correct evidence family / producer identity | **CONFIRMED** — `evidence_family: hermes.signal_state`, `producer_component_id: hermes.signal_engine` |
+| `instrument_id`/`timeframe` searchable | **CONFIRMED** — `payload_instrument_id`/`payload_timeframe` present, correctly un-flattened |
+| `regime`/`session` searchable when supplied | **CONFIRMED** — `payload_regime`/`payload_session` present |
+| Missing optional context (instrument/timeframe/regime all omitted) accepted | **CONFIRMED** — `falcon_validity: VALID` with those fields genuinely absent |
+| Missing mandatory **envelope** field (`falcon_event_id` removed) quarantined | **CONFIRMED** — `falcon_validity: INVALID`, `falcon_missing_required_field: true`, routed to Quarantine |
+| Spoofed producer identity (claims `ares` via HERMES's own input/cert) quarantined | **CONFIRMED** — `falcon_identity_mismatch: true`, `producer_system_id` preserved as the false claim `ares`, routed to Quarantine — same proven FF-PRODUCER-IDENTITY-01 pattern as PID-04 |
+| Complete original JSON preserved, base64 round-trip | **CONFIRMED** — for a 192-byte realistic payload and all four mandate sizes (16384/65536/262144/524288 bytes); decoded lengths exactly match target sizes in every case, and `hermes_signal_raw_json` (the original field) confirmed absent after encoding every time, proving `remove_field()` worked correctly every time |
+| Existing families remain functional | **CONFIRMED** — no existing rule/routing logic touched (per the diff review before testing); HERMES's own existing traffic unaffected (per the PID-04 regression above) |
+| No IRIS impact | **CONFIRMED** — via `docker ps`, unchanged ~5-week uptime, before/during/after |
+
+### MAJOR FINDING — pre-existing, universal gap: live pipeline does not enforce per-family required payload fields
+
+**This is a genuine, significant architectural gap, surfaced for the
+first time by this delivery's testing — not caused by Stage 1, and not
+specific to `hermes.signal_state`.** Documented here prominently and
+deliberately, per the Architect's own standing evidence-rigour
+expectations, rather than folded quietly into a routine checklist row.
+
+**What was found:** testing mandate item #4 ("missing mandatory
+[payload] identity field quarantined," using
+`missing_signal_natural_key.json`) — the message was accepted as
+**`falcon_validity: VALID`**, not quarantined.
+
+**Root cause, confirmed by reading the live rule source directly, not
+assumed:** the live "FALCON - flag missing required fields" rule's own
+DSL only checks 6 fixed, hardcoded **envelope-level** fields
+(`falcon_event_id`, `producer_system_id`, `evidence_family`,
+`evidence_type`, `produced_at_utc`, `payload_hash`). It has no knowledge
+of, and never checks, any family's own `required_payload_fields` from
+`registry/event_family_registry.v1.json` — because Graylog's pipeline
+rule DSL cannot read the JSON registry at runtime (a constraint already
+confirmed independently during PID-04's own work).
+
+**Confirmed universal, not new, and not specific to this family:** an
+existing, already-live, already-tested-elsewhere fixture
+(`hermes_market_fact.json`) was taken, its own required payload field
+(`fact_id`) was stripped, and it was sent live — **also accepted as
+VALID**, not quarantined. This proves the gap has existed since
+whichever PID first registered a family with a required payload field,
+predates this PID entirely, and affects every existing family
+(HERMES/ARES/HELIOS/TRON) equally — it is not something Stage 1
+introduced or could have introduced.
+
+**Confirmed the mandate's own literal wording IS correctly enforced:**
+the mandate specifically asked for "missing mandatory **envelope**
+field" quarantine (not payload field), and `hermes_signal_state.json`
+with `falcon_event_id` removed was correctly quarantined — see the
+table above. The gap is specific to **payload-level** required-field
+enforcement, not envelope-level, which has always worked correctly.
+
+**What this means, precisely:** the offline PID-01 validator
+(`tests/validator/cli`, used for fixture/CI testing) has always
+correctly enforced per-family `required_payload_fields` — this is real,
+proven, and not in question. But the **live** Graylog pipeline has
+never enforced this same check for **any** family. This is a real,
+previously-unknown gap between what CI proves and what the live system
+actually enforces at the payload level, discovered only because this
+delivery's live testing happened to exercise a payload-level-omission
+scenario for the first time — every prior PID's live testing focused on
+envelope-level/identity/transport concerns, never payload-level
+completeness.
+
+**Explicitly out of scope for Stage 1 — do not patch silently:** per
+the coordinator's own instruction, this is a separate, pre-existing
+architectural question that belongs to the Architect's own decision
+(the fix would need either a large per-family DSL rule enumerating each
+family's own required payload fields directly in pipeline rule source —
+mirroring the existing enumerated-value pattern this PID's own Content-
+pack section describes — or a different enforcement mechanism
+entirely). **No fix has been attempted, proposed in code, or applied as
+part of this PID.** Flagged here for visibility and for the Architect's
+own prioritisation, exactly as instructed — not silently worked around,
+not silently left undocumented.
+
+### Second finding — a real Graylog operational quirk: fresh index sets' active write index has no time-range metadata
+
+A genuine Graylog behaviour, not a bug in anything built for this PID:
+a newly-created index set's currently-active (not-yet-rotated) write
+index does not get its time-range metadata calculated. This makes
+Graylog's `/api/search/universal/relative` (relative time-range) search
+endpoint silently return **zero results** for data that is confirmably
+present — verified directly via raw OpenSearch `_search`, which showed
+the documents genuinely exist with correct field values. Neither an
+explicit `POST /api/system/indices/ranges/rebuild` nor forcing another
+index rotation fixed this for the still-open index.
+
+**This is why `tests/fte/pid05_stage1_signal_state_tests.py`'s own
+automated search-based verification could not find any of the messages
+it sent, even though every one of them landed correctly.** Rogue
+reviewed the harness's own code directly and confirmed **the harness is
+correct as written** — this is not a defect in what the FORGE Engineer
+built; it is purely this Graylog time-range-metadata quirk affecting the
+search endpoint the harness (correctly) uses.
+
+**Standing note for future use of this harness:** it needs either (a) a
+documented pre-condition that it is only reliable once the isolated
+index set has undergone at least one real, natural rotation with a
+subsequent index actually open, or (b) a fallback direct-OpenSearch
+verification path for a genuinely fresh isolated index set. Which of
+the two is the better fix is left as a future call for whoever next
+runs or extends this harness — not resolved here, and explicitly not
+attempted as part of this delivery, to avoid scope creep into what was
+originally a documentation-only follow-up round.
+
+### Minor finding — `remove_field()` deprecation warning
+
+Graylog logs a deprecation warning for `remove_field` when the new
+pipeline rule runs (`WARN: ... deprecated function remove_field`). It
+still works correctly — confirmed by every round-trip test in the table
+above, including all four mandate payload sizes. Worth a standing note
+that a future Graylog upgrade may require migrating this rule (and any
+other rule using `remove_field()`, including any future family that
+reuses this same binary-field pattern) to whatever the non-deprecated
+replacement function turns out to be. No action taken now; flagged for
+whenever Graylog is next upgraded.
+
+### Process note — worktree secrets double-mount (not a finding, a convention)
+
+The cert-location issue (already tracked at Section E.1 as "durable
+canonical storage") was hit again for this round's live testing: a new
+worktree never has `deploy/secrets/` populated, since it is gitignored
+and git worktrees do not share untracked files with each other or with
+the canonical checkout. Rogue worked around this by double-mounting
+`/srv/falcon/deploy/secrets` over the worktree's own path in every
+docker-run test invocation. This is not a new gap — it confirms E.1's
+"durable canonical location" fix is the correct one — but it does mean
+**every future worktree-based FTE test session will need this same
+double-mount pattern** until a small wrapper script is written to do it
+automatically. Suggested as a convention for future FTE runs from a
+worktree, not yet codified into a script.
+
+### Net Stage 1 verdict
+
+hermes.signal_state / hermes.signal_engine are live, correctly
+identity-checked, correctly routed, correctly payload-preserved
+(binary-field mechanism proven end-to-end at all four mandate sizes),
+and correctly envelope-level-quarantined on identity/spoofing/
+missing-envelope-field failure modes. Stage 1 itself is functionally
+complete and verified. The one major finding above is a real,
+pre-existing, universal architectural gap that Stage 1's testing
+surfaced but did not cause and does not fix — it is handed to the
+Architect for prioritisation, separately from Stage 1's own closure,
+and a fresh Auditor pass is expected before any Stage 1 stop-gate
+report is compiled, specifically because of this finding's significance.

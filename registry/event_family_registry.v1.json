@@ -415,6 +415,18 @@
         "component_health_id",
         "health_status"
       ]
+    },
+    {
+      "family": "hermes.signal_state",
+      "system": "hermes",
+      "status": "live",
+      "registered_types": [
+        "indicator_regime_snapshot"
+      ],
+      "schema_file": "payloads/hermes/signal_state.v1.schema.json",
+      "required_payload_fields": [
+        "signal_natural_key"
+      ]
     }
   ],
   "reserved_not_live": [

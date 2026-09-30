@@ -71,7 +71,7 @@ class TestValidFixturesAccepted(ContractTestBase):
         families = {doc["evidence_family"] for doc in self.valid_fixtures.values()}
         registered = set(self.ctx.families_by_key.keys())
         self.assertEqual(families, registered)
-        self.assertEqual(len(registered), 27)
+        self.assertEqual(len(registered), 28)
 
 
 class TestInvalidFixturesRejected(ContractTestBase):

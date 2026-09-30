@@ -51,5 +51,9 @@
     "check": "identity_law",
     "paired_with": "hermes_health_heartbeat_a.json",
     "reason": "Structurally valid alone. INVALID only in combination with tests/fixtures/valid/hermes_health_heartbeat_a.json: it reuses that event's falcon_event_id while carrying a different payload/payload_hash (HEALTHY vs DOWN), which violates the immutable-identity law (payload_hash is integrity data, not identity). Checked via the cross-fixture identity law, not per-file schema validation."
+  },
+  "missing_signal_natural_key.json": {
+    "check": "structural",
+    "reason": "payload.signal_natural_key (the only required identity field for hermes.signal_state) is missing entirely -- HERMES has no natural stable event id (its (instrument, timeframe, timestamp) SQL key is an upsert key, not an event id, per PID-05 Section 9/D.6); signal_natural_key is the one real, honestly-derivable anchor HERMES actually has, and the schema requires it explicitly rather than inventing a fake identity concept."
   }
 }

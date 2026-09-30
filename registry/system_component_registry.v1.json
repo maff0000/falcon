@@ -15,7 +15,8 @@
     ],
     "hermes": [
       "hermes.market_data_service",
-      "hermes.quality_monitor"
+      "hermes.quality_monitor",
+      "hermes.signal_engine"
     ],
     "ares": [
       "ares.calendar_service",

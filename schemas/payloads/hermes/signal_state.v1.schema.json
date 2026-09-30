@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://falcon.thegoal.internal/schemas/payloads/hermes/signal_state.v1.schema.json",
+  "title": "FalconEvent payload: hermes.signal_state (v1)",
+  "description": "Typed payload schema for registered FALCON event family 'hermes.signal_state'. Deliberately minimal, per the mandate's own instruction: this schema validates only identity/structural/searchable fields, never HERMES's actual indicator/regime VALUES (RSI, EMAs, ATR, Bollinger Bands, support/resistance levels, etc.) -- those live entirely inside the full original HERMES JSON, preserved byte-for-byte via the binary-field pipeline mechanism (see deploy/README.md's PID-05 'Isolated native large-payload proof' section), never structurally validated or interpreted here. signal_natural_key is the only required property -- see its own description for why, and why this does not contradict PID-05's own Section 9/D.6 finding that HERMES has no natural stable EVENT identity.",
+  "type": "object",
+  "properties": {
+    "signal_natural_key": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^:]+:[^:]+:.+$"
+    },
+    "instrument_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timeframe": {
+      "type": "string",
+      "enum": ["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1"]
+    },
+    "regime": {
+      "type": "string",
+      "enum": ["BULL_TREND", "BEAR_TREND", "RANGING", "TRANSITION", "HIGH_VOLATILITY", "LOW_VOLATILITY", "SAFE_FALLBACK"]
+    },
+    "session": {
+      "type": "string",
+      "enum": ["asia", "london", "newyork", "late_ny"]
+    },
+    "signal_type": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "signal_natural_key"
+  ],
+  "additionalProperties": false
+}

@@ -635,7 +635,8 @@
         "tron.order_intent",
         "tron.order_submitted",
         "tron.position_state",
-        "tron.trigger_observed"
+        "tron.trigger_observed",
+        "hermes.signal_state"
       ],
       "required_default": null,
       "enum": null,
@@ -656,7 +657,8 @@
       "allowed_families": [
         "helios.strategy_evaluated",
         "helios.strategy_state",
-        "helios.strategy_trigger"
+        "helios.strategy_trigger",
+        "hermes.signal_state"
       ],
       "required_default": null,
       "enum": [
@@ -2815,6 +2817,95 @@
       "pattern": null,
       "unit_precision": "integer milliseconds",
       "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "regime",
+      "type": "string",
+      "description": "HERMES-computed market regime classification for a signal_state snapshot, sourced from the actually-live-wired path: signal_builder.py calls self._regime_detector.classify(indicators) (line 634) and emits regime=regime_result.regime_id (line 691), where RegimeDetector.classify() (utils/regime_detector.py) is the real, reachable source of this value. CORRECTED 2026-09-30 per a fresh Auditor finding (independently re-verified against the live HERMES source): the original enum/description cited signal_builder.py's own _determine_regime() (defined at line 395), which is dead code -- confirmed via direct grep that it is defined once and never called anywhere in the file. The prior 4-value enum (BULL_TREND/BEAR_TREND/TRANSITION/LOW_VOLATILITY) was a real but wrong subset; the actual reachable value set has 7 members, adding RANGING/HIGH_VOLATILITY/SAFE_FALLBACK.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.signal_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "BULL_TREND",
+        "BEAR_TREND",
+        "RANGING",
+        "TRANSITION",
+        "HIGH_VOLATILITY",
+        "LOW_VOLATILITY",
+        "SAFE_FALLBACK"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "session",
+      "type": "string",
+      "description": "HERMES-computed named trading session, sourced from the actually-live-wired path: signal_builder.py's own _get_session(timestamp) method (line 381), called at line 604 as session = self._get_session(candle.timestamp) and emitted at line 692. CORRECTED 2026-09-30 per a fresh Auditor finding (independently re-verified against the live HERMES source): the original enum/description cited utils/trading_hours.py's get_current_session(), which signal_builder.py never imports or calls. The real _get_session() implementation returns exactly 4 values keyed on UTC hour (22<=hour or hour<7 -> asia; 7<=hour<12 -> london; 12<=hour<17 -> newyork; else -> late_ny) -- none of the prior enum's overlap_ldn_ny/off_hours values are producible by this real path, and late_ny was missing entirely. Deliberately distinct from ares.market_status.session_state's session_id/ session_state (ARES session LIFECYCLE state -- PRE_OPEN/OPEN/CLOSING/CLOSED/ HOLIDAY -- is a different concept from this geographic/named session, per PID-05's own discovery-phase finding; the two must never be conflated despite the shared word 'session').",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.signal_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "asia",
+        "london",
+        "newyork",
+        "late_ny"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "signal_type",
+      "type": "string",
+      "description": "Free-text classification/name for a hermes.signal_state event (e.g. a specific detected condition or signal shape). No enum is imposed: unlike regime/session, this delivery has no evidenced, closed HERMES-side value set to cite, and would rather leave it open than fabricate one.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.signal_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "signal_natural_key",
+      "type": "string",
+      "description": "The one required identity anchor for hermes.signal_state: a producer-constructed string representing HERMES own real natural key (instrument:timeframe:produced_at_utc). This is NOT a claim that HERMES has a stable independent event id -- PID-05 Section 9/D.6 already established it does not (its SQL (instrument, timeframe, timestamp) key is an upsert key, not an event identity). signal_natural_key is deliberately just an honest string representation of that same real, already-existing natural key, required so the payload carries at least one concrete anchor -- the eventual deterministic falcon_event_id derivation (UUID5, per D.6) is expected to be computed FROM this same natural key at publish time, not from a separately invented identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.signal_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
       "retention_class": "standard",
       "sensitivity_class": "internal",
       "version_introduced": "v1",
