@@ -97,8 +97,10 @@ def build_message(*, target_content_bytes: int, marker: str, host: str) -> dict:
     mitigation, applied here so this probe's own payloads are never
     themselves subject to the already-understood per-field limit."""
     msg = {
+        "version": "1.1",
         "host": host,
         "short_message": f"pid05 rate/concurrency probe {marker}",
+        "timestamp": time.time(),
         "_fte_send_marker": marker,
         "_pid05_rate_probe_target_bytes": target_content_bytes,
     }
@@ -126,27 +128,6 @@ def send_fresh(messages: list[dict], *, gelf_host: str, gelf_port: int,
             errors.append(None)
         except OSError as exc:
             errors.append(f"{type(exc).__name__}: {exc}")
-    return errors
-
-
-def send_reused(messages: list[dict], *, gelf_host: str, gelf_port: int,
-                 client_cert: str, client_key: str, server_ca: str) -> list[str | None]:
-    """A single TCP+TLS connection held open across all sends -- each
-    message written as its own null-delimited GELF frame on that same
-    connection. Isolates whether repeated TLS handshake/connection
-    SETUP overhead (present in 'fresh' mode, absent here) is itself the
-    driver of the observed silent-loss behaviour."""
-    context = sender.build_mtls_context(client_cert=client_cert, client_key=client_key, server_ca=server_ca)
-    errors: list[str | None] = []
-    with socket.create_connection((gelf_host, gelf_port), timeout=10.0) as raw_sock:
-        with context.wrap_socket(raw_sock, server_hostname=gelf_host if context.check_hostname else None) as tls_sock:
-            for msg in messages:
-                try:
-                    payload = json.dumps(msg, separators=(",", ":")).encode("utf-8") + b"\x00"
-                    tls_sock.sendall(payload)
-                    errors.append(None)
-                except OSError as exc:
-                    errors.append(f"{type(exc).__name__}: {exc}")
     return errors
 
 
