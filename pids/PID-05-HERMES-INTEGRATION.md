@@ -1431,16 +1431,173 @@ as evidence of the underlying platform behaviour, but if the Architect
 is choosing one approach to standardise on for full-payload
 preservation, **the `binary` Custom Field Mapping is the recommended
 design**, informing Section D's own payload-preservation proposal below.
-**Status: proposed, not executed.** This has not been executed or
-proven live — it is a design recommendation from static jar-level
-investigation, and the DEV test above is a proposal for the Architect's
-consideration, pending explicit Architect authorisation to actually run
-it. Consistent with this whole mandate's discovery-only, read-only/
-design-only framing, this delivery does not unilaterally decide to
-execute it; Rogue has likewise deliberately not run it. Until that
-authorisation is given and the test (or an equivalent) is actually run,
-the `binary`-field recommendation above should be treated as a
-well-reasoned proposal, not a proven design.
+**Status: SUPERSEDED — executed.** This section originally read
+"proposed, not executed," pending explicit Architect authorisation to
+actually run the DEV test above. That authorisation has since been
+given, and the test (in a fuller, more rigorous form than the minimal
+proposal above — including index rotation, missing-optional-field
+handling, and two genuine implementation findings) has been executed
+live against the real stack. **See "Isolated native large-payload proof
+— executed" below for the full results.** The proposal above is kept in
+place, unmodified, as the historical record of what was proposed before
+execution — matching this document's own established convention
+(Section 6/7's discovery findings vs. Section C's later empirical
+follow-up) of never rewriting an earlier proposal to look like it
+already knew the answer.
+
+## Isolated native large-payload proof — executed (Rogue, live, against the real stack)
+
+**Status: this supersedes the "proposed, not executed" DEV test above.**
+Following the discovery-phase B/C/D/E round, the Architect issued a
+further bounded follow-up specifically authorising execution of the
+isolated native large-payload experiment (not merely proposing it), plus
+two further items covered later in this document (the restricted
+host-port-publishing proposal, and confirmation of the contract
+proposal). This section documents that execution in full. Everything
+below was run by Rogue, live, against the real DEV stack, entirely
+isolated from `falcon-evidence_0` and the real "FALCON Ingestion"
+pipeline, and fully cleaned up afterward (confirmed zero residue in the
+isolated objects created — the small amount of *expected* real-evidence
+residue this test also produced is explained below, and is not a defect).
+
+### Setup
+
+- A new, disposable Graylog index set, **"PID-05 Binary DEV Test"**,
+  created with `max_docs_per_index: 3` — deliberately low, specifically
+  to force at least one real index rotation partway through testing
+  (this was not incidental; it directly proves the rotation-safety claim
+  Section B's static jar investigation made, rather than leaving it
+  asserted-but-unproven).
+- A **Custom Field Mapping on that index set only**: `pid05_binary_payload`
+  → physical type `binary`. Scoped per-index-set, exactly as the Section
+  B jar investigation predicted — not a global Graylog setting, and not
+  applied to `falcon-evidence_0`.
+- A **new, isolated stream**, matching only on the presence of a unique
+  test-marker field, with `remove_matches` left `false` (**deliberately
+  NOT removing matches from the Default Stream** — this is why a small
+  amount of real-evidence residue appears; see below) — routed only to
+  the new index set.
+- A **new, isolated pipeline**, connected only to that one new stream —
+  the real, existing "FALCON Ingestion" pipeline was never touched,
+  read, or modified at any point. One rule: `base64_encode()` the plain
+  producer JSON into the `pid05_binary_payload` field, then
+  `remove_field()` the original plain-JSON field (this second step was
+  not part of the original minimal proposal — see finding #1 below for
+  why it turned out to be load-bearing, not optional).
+
+### Results
+
+All sends were real mTLS through HERMES's own actual PID-04 dedicated
+input (port 12411) — not a synthetic bypass of the transport/identity
+layer this PID has spent its whole discovery phase proving out.
+
+- **16 KiB, 64 KiB, 256 KiB, 512 KiB**, each sent as **plain, unencoded
+  JSON in an ordinary additional field** — matching the real intended
+  producer-side design exactly: HERMES itself never needs to encode or
+  otherwise transform anything. All four indexed successfully, zero
+  "immense term" errors, and all four were retrieved via the governed
+  Graylog API, base64-decoded, and confirmed **byte-for-byte identical**
+  to the original submitted JSON (`BYTE_FOR_BYTE_MATCH=True` for all
+  four; exact lengths 16382 / 65534 / 262142 / 524286 bytes).
+- **GELF frame size stayed comfortably under the 2 MiB transport limit
+  at every size tested** — even the largest (512 KiB original → ~699 KB
+  after base64's ~33% inflation) recorded `gl2_accounted_message_size:
+  699463` bytes, roughly a third of the 2,097,152-byte ceiling. Base64
+  inflation is a real, non-trivial cost (confirmed, not merely
+  estimated) but leaves substantial headroom at every size this PID has
+  tested so far.
+- **Missing optional field:** one message deliberately omitted an
+  optional context field (`instrument_id`) — accepted and indexed
+  normally, no rejection. Directly proves the mandate's own "missing
+  optional field = omit it, never reject solely because optional
+  context is absent" requirement (Section 4.2) holds for this new
+  payload-preservation path too, not just the original envelope fields.
+- **Index rotation, proven not merely asserted:** the deliberately low
+  `max_docs_per_index` caused a real rotation partway through — the
+  16 KiB/64 KiB messages landed in physical index `_1`, the 256 KiB/
+  512 KiB messages in `_2` (confirmed via each message's own `index`
+  field). **The Custom Field Mapping was still correctly applied in the
+  post-rotation index** — proven directly by the byte-for-byte match
+  succeeding on the messages that landed there, not inferred. One
+  further, explicit rotation was also forced via a mapping-refresh call
+  with `rotate: true`, and a subsequent message still round-tripped
+  correctly. This directly confirms, empirically, the claim Section B's
+  static jar investigation made from reading `IndexMapping`/
+  `IndexMapping7`'s source alone — a Custom Field Mapping surviving
+  rotation is no longer an inference from code, it is a proven, repeated
+  observation.
+- **Real evidence/IRIS confirmed unaffected, with the one expected
+  exception explained, not hidden:** `falcon-evidence_0` (`FALCON
+  Evidence`) went from ~450 to 531 documents. This is expected test
+  residue, not a defect: because the isolated test stream's
+  `remove_matches` was deliberately left `false` (so the new stream
+  could observe messages without disturbing their normal routing),
+  some of the synthetic test messages *also* matched the Default Stream
+  and were picked up by the real, unmodified "FALCON Ingestion"
+  pipeline, which — correctly, exactly as PID-03 already proved it
+  would — routed them to `FALCON: Quarantine` as unrecognised
+  producer/family traffic. This is the same accepted-residue pattern
+  already established in prior PIDs (PID-02's own documented synthetic-
+  test-input residue), not new behaviour. All FALCON and IRIS containers
+  confirmed healthy throughout and at the end of testing.
+
+### Cleanup — confirmed, not assumed
+
+The disposable index set, its Custom Field Mapping, the isolated stream,
+and the isolated pipeline were all deleted via Graylog's own supported
+API after testing completed. Zero residue was confirmed for all of
+these isolated objects. The only residue is the expected real-evidence
+Quarantine entries described above, which are themselves legitimate,
+correctly-classified FALCON evidence (Quarantined, exactly as designed)
+— not test debris left in an inconsistent state.
+
+### Finding #1 — a genuine implementation requirement, not just a test-design bug
+
+The first test attempt sent the plain JSON payload in an *additional*
+field without removing it after the pipeline's `base64_encode()` step
+copied it into the binary field. That original plain-JSON field is
+**also** subject to Graylog's default dynamic `keyword` mapping and the
+same 32,766-byte term-length limit documented throughout this PID — so
+the 64/256/512 KiB attempts failed identically to the original failure
+mode 2, until `remove_field()` was added to the pipeline rule.
+
+**This is a real design requirement for the actual implementation, not
+merely a test artifact to note and move past:** any real pipeline
+performing this encode-to-binary transform **must discard the original
+plain-JSON field afterward**, or the entire benefit of the `binary`
+approach is silently defeated by the very field it was introduced to
+route around. Section D.5 below is updated to state this explicitly as
+part of the proposed mechanism, not left as an implicit assumption.
+
+### Finding #2 — a genuine Graylog API quirk, worth a standing note
+
+A stream-creation `POST` that fails validation on its own `rules` array
+(the wrong stream-rule `type` value was used on the first attempt) still
+left an **orphaned, ruleless, disabled stream object** behind,
+referencing the index set — the base stream object had already been
+created before the rules-array validation failed. This orphan blocked
+index-set deletion until it was found and removed separately. Worth
+recording as a standing operational note for anyone building Graylog
+automation against this API: **a stream-creation request can partially
+succeed (the base stream persists) even when the overall request is
+rejected with a 400** — always verify the object doesn't exist before
+assuming a failed creation call left nothing behind.
+
+### Finding #3 — confirmed, not assumed: the mapping does not leak across index sets
+
+A couple of the synthetic test messages, per the Default-Stream dual-
+match explained above, landed in **both** the isolated test index (which
+has the `binary` mapping) and the real `falcon-evidence_0` index (which
+does not). The copies in `falcon-evidence_0` **correctly failed to
+index** via the already-documented failure-mode-2 path (the field there
+is an ordinary, unmapped, oversized `keyword` field), while the copies
+in the isolated test index set — the one with the actual Custom Field
+Mapping — succeeded. This is expected and correct, not a bug, and is
+recorded here because it is a clean, direct, empirical demonstration
+that the mapping is genuinely scoped to the index set it was applied
+to, not a global change with unpredictable reach — exactly what Section
+B's static investigation predicted from `CustomFieldMappings` being an
+index-set-level configuration object, now independently confirmed live.
 
 ## C. Rate/concurrency silent-loss characterisation (Rogue, live empirical test matrix)
 
@@ -1563,6 +1720,20 @@ finding already established earlier in this same file (Sections 4 and
 splitting them across files would only make that cross-referencing
 harder for no real benefit.
 
+**Confirmation note (added after a further Architect follow-up asked for
+a "subsequent contract proposal"):** that request restates, almost
+exactly, what this Section D already covers — `hermes.signal_state`/
+`hermes.signal_engine`, the envelope left unchanged, instrument/
+timeframe/regime/session included only where genuinely available,
+every other optional context field omitted rather than fabricated, the
+original JSON preserved without FALCON interpreting it, and no
+per-indicator schemas. **This section already satisfies that request in
+full — nothing new needed to be built, only cross-referenced here.** The
+one substantive update made as a result is to D.5 immediately below,
+which now points at the executed (not merely proposed) binary-field
+proof as the concrete payload-preservation mechanism, rather than a
+still-hypothetical recommendation.
+
 ### D.1 Proposed evidence family
 
 **`hermes.signal_state`** (name proposed, not final) — a single,
@@ -1636,17 +1807,30 @@ fabricated values or defaults.
 
 ### D.5 Original payload preservation
 
-Informed directly by Section B above: the original HERMES JSON payload
-(the full indicator/regime record, not just the searchable subset)
-should be carried as a single additional field, base64-encoded, mapped
-via a Custom Field Mapping to Graylog's `binary` physical type — not
-split across multiple chunk fields, and not flattened into individual
-per-attribute FALCON fields (which would require a schema change per
-new HERMES attribute, exactly what the mandate prohibits). The
-`base64_encode()` step happens in the pipeline (extending the existing
-"FALCON Ingestion" pipeline, PID-03's own established pattern), not in
-HERMES — the producer-side contract stays exactly as simple as sending
-one plain JSON string in one additional field.
+**Now grounded in an executed proof, not just a static recommendation**
+— see "Isolated native large-payload proof — executed" above. The
+original HERMES JSON payload (the full indicator/regime record, not
+just the searchable subset) is carried as a single additional field,
+base64-encoded, mapped via a Custom Field Mapping to Graylog's `binary`
+physical type — not split across multiple chunk fields, and not
+flattened into individual per-attribute FALCON fields (which would
+require a schema change per new HERMES attribute, exactly what the
+mandate prohibits). The `base64_encode()` step happens in the pipeline
+(extending the existing "FALCON Ingestion" pipeline, PID-03's own
+established pattern), not in HERMES — the producer-side contract stays
+exactly as simple as sending one plain JSON string in one additional
+field, confirmed live at 16 KiB/64 KiB/256 KiB/512 KiB with byte-for-byte
+retrieval fidelity at every size.
+
+**One concrete, load-bearing implementation detail the execution proof
+surfaced (Finding #1 above), stated here explicitly rather than left
+implicit:** the pipeline rule performing this transform **must
+`remove_field()` the original plain-JSON field after encoding it** —
+otherwise that original field remains an ordinary, unmapped, oversized
+`keyword` field and is itself subject to the same 32,766-byte term-length
+limit this whole mechanism exists to avoid, silently defeating the
+entire approach. This is not an optional cleanup step; it is a required
+part of the mechanism.
 
 ### D.6 Event identity and revision semantics
 
@@ -1708,35 +1892,50 @@ fabricated.
 
 ## E. Credential storage convention, and a network-connectivity finding
 
-### E.1 Durable producer mTLS credential storage (design proposal)
+### E.1 Durable producer mTLS credential storage — IMPLEMENTED (was: design proposal)
 
-**Motivation, directly from this PID's own experience:** the HERMES
-PID-04 test client cert/key were generated inside the PID-04 worktree's
-local, gitignored `deploy/secrets/pid04-mtls/clients/` directory, and
-were genuinely, permanently lost when that worktree was deleted
-post-merge — the Architect's own correct, routine cleanup instruction.
-Only the server's trust-copy of the old *public* cert survived, inside
-`graylog-falcon`'s own persistent volume; the private key had no other
-home at all. This PID had to regenerate a fresh keypair before capacity
-testing could proceed (recorded earlier in this file's Section 10
-findings).
+**Status: implemented, not just proposed.** This section originally
+proposed a durable storage convention. It has since actually been put in
+place: `dell-debian:/srv/falcon/deploy/secrets/pid04-mtls/` now durably
+holds HERMES's client cert+key and a copy of the server cert, on the
+**canonical, non-worktree checkout**, confirmed live (not assumed):
+`clients/hermes.key` (600), `clients/hermes.crt` (644),
+`server/server.crt` (644), directories at `700` throughout, and
+`git check-ignore -v` against `/srv/falcon`'s own working copy confirms
+`deploy/secrets/pid04-mtls/clients/hermes.key` matches the existing
+`**/secrets/**` rule — exactly the convention originally proposed below,
+now the actual standing location, not a design document waiting to be
+acted on.
 
-**Proposed convention, mirroring the pattern already established for
-`deploy/.env` in PID-02/03:** producer mTLS credential material
-(private keys especially — public certs are already safely durable
-inside `graylog-falcon`'s own persistent volume, per PID-04) should live
-in a durable location on the **canonical, non-worktree checkout**
-(`dell-debian:/srv/falcon`), never only inside a disposable
-`/srv/falcon-worktrees/wo-*` directory — for example
-`dell-debian:/srv/falcon/deploy/secrets/pid04-mtls/` (the same relative
-path convention already used inside worktrees, just rooted at the
-canonical checkout instead of a worktree that will eventually be
-deleted). Same permissions/coverage as already established: directories
-`700`, keys `600`, certs `644`, and the canonical checkout's own
-`.gitignore` already covers `**/secrets/**` (confirmed present at
-`/srv/falcon/.gitignore` — same rule as every worktree's, since it's
-version-controlled), so no new gitignore work is needed, only a
-placement-location discipline change.
+**Motivation, directly from this PID's own experience — and it
+genuinely recurred a second time, which is itself part of the record:**
+the HERMES PID-04 test client cert/key were originally generated inside
+the PID-04 worktree's local, gitignored `deploy/secrets/pid04-mtls/
+clients/` directory, and were genuinely, permanently lost when that
+worktree was deleted post-merge — the Architect's own correct, routine
+cleanup instruction. A fresh keypair was regenerated inside the *PID-05*
+worktree so capacity testing could proceed (recorded earlier in this
+file's Section 10 findings) — but that was **still only a worktree-local
+copy**, and when the PID-05 worktree was itself deleted at merge
+cleanup, **the exact same loss happened again**, to the exact same
+credential, for the exact same reason. This second, real-world
+recurrence is exactly why the proposal below was finally implemented for
+real rather than described a third time: the pattern demonstrably keeps
+recurring until the storage location itself changes, not just the
+awareness of the risk.
+
+**The convention (originally proposed, now implemented), mirroring the
+pattern already established for `deploy/.env` in PID-02/03:** producer
+mTLS credential material (private keys especially — public certs are
+already safely durable inside `graylog-falcon`'s own persistent volume,
+per PID-04) lives in a durable location on the canonical, non-worktree
+checkout, never only inside a disposable `/srv/falcon-worktrees/wo-*`
+directory — the same relative path convention already used inside
+worktrees, just rooted at the canonical checkout instead of a worktree
+that will eventually be deleted. Same permissions/coverage as already
+established: directories `700`, keys `600`, certs `644`; no new
+`.gitignore` work was needed, since the canonical checkout's existing
+`**/secrets/**` rule already covers it.
 
 **This applies to every current and future producer's client material,
 not just HERMES's** — ARES, HELIOS, and both TRON identities generated
@@ -1745,7 +1944,9 @@ during PID-04 exist under exactly the same worktree-local risk today
 own history) — this is not a HERMES-specific gap, it is a standing
 open item for whoever next needs to rotate or re-derive any of those
 four other producers' client keys, worth HELM's attention independent
-of PID-05.
+of PID-05. Only HERMES's material has actually been migrated to the
+durable location so far — this is a standing to-do for the other four,
+not something this PID's own scope extends to.
 
 ### E.2 Network connectivity — a producer must never attach directly to `falcon-net` (Rogue's finding, formalised here)
 
@@ -1802,3 +2003,86 @@ itself something HELM should address regardless of HERMES or PID-05 —
 this is a standing FALCON-wide finding, not a HERMES-integration-
 specific one, and arguably belongs on HELM's own backlog independent of
 whether or when HERMES publishing is ever implemented.
+
+## Restricted host-port-publishing proposal — design/prepare only (HELM work order)
+
+**Status: design/prepare only.** Per Section E.2's own conclusion above
+(dedicated-port-publishing is the only network-connectivity approach
+evaluated so far that doesn't hand a producer direct, unauthenticated
+backing-store access), this section writes up the exact proposed change
+needed to make that approach real for HERMES. **This is a HELM-owned
+privileged infrastructure action — modifying `deploy/docker-compose.yml`
+and recreating the `graylog-falcon` container — and is not executed
+here or by Rogue.** It is written up ready for a bounded HELM work
+order, not applied.
+
+### Current state (confirmed, not assumed)
+
+`deploy/docker-compose.yml`'s `graylog-falcon` service currently
+publishes exactly one host port, using a fail-loud, env-var-driven,
+specific-IP-bound convention (never `0.0.0.0`):
+
+```yaml
+    ports:
+      - "${FALCON_GRAYLOG_HOST_BIND_IP:?FALCON_GRAYLOG_HOST_BIND_IP is required}:${FALCON_GRAYLOG_HOST_PORT:?FALCON_GRAYLOG_HOST_PORT is required}:9000"
+```
+
+None of the 5 PID-04 dedicated producer inputs (12411-12415) are
+published to the host today — they exist only on `falcon-net`, which is
+exactly why HERMES (on the separate `hermes_net`) cannot reach one
+without either a connectivity change or (per Section E.2's rejected
+option) a direct second-network attachment.
+
+### Proposed change
+
+Add exactly **one** new host port mapping to the same `ports:` block,
+for the HERMES input only (port 12411), using the identical fail-loud,
+specific-IP-bound convention already established for port 9010 — not a
+new pattern:
+
+```yaml
+    ports:
+      - "${FALCON_GRAYLOG_HOST_BIND_IP:?FALCON_GRAYLOG_HOST_BIND_IP is required}:${FALCON_GRAYLOG_HOST_PORT:?FALCON_GRAYLOG_HOST_PORT is required}:9000"
+      - "${FALCON_GRAYLOG_HOST_BIND_IP:?FALCON_GRAYLOG_HOST_BIND_IP is required}:${FALCON_HERMES_INPUT_HOST_PORT:?FALCON_HERMES_INPUT_HOST_PORT is required}:12411"
+```
+
+reusing the existing `FALCON_GRAYLOG_HOST_BIND_IP` variable (the bind IP
+is the same host, `192.168.11.10`, for every published port — no reason
+to introduce a second IP variable) and adding one new required variable,
+`FALCON_HERMES_INPUT_HOST_PORT` (proposed value: `12411`, matching the
+input's own internal port — no renumbering), to `deploy/.env.example`
+and the real `.env`, following the exact same `:?required` fail-loud
+pattern every other port/host variable in this file already uses.
+Result: `192.168.11.10:12411` reachable from `hermes_net` (once HERMES
+is also given a route to the host, or more simply, since the host itself
+routes between its own Docker networks, from any container that can
+reach the dell-debian host's own LAN IP) — matching the existing
+convention for port 9010 exactly, never `0.0.0.0`.
+
+### Explicitly NOT proposed
+
+The other 4 producer ports (12412-12415, for ARES/HELIOS/both TRON
+identities) are **explicitly not proposed for publishing** in this work
+order — each would need its own separate authorisation once that
+specific producer's integration is actually being implemented, exactly
+mirroring how PID-05 itself required its own dedicated authorisation for
+HERMES. Publishing all 5 speculatively, before the other 4 producers
+have any integration work authorised at all, would be exposing
+attack surface with no corresponding requirement yet — precisely the
+"do not expose all producer inputs" instruction this mandate's own
+Section 10 (network and authentication) already gave.
+
+### Acceptance criteria for the eventual HELM work order
+
+- `docker compose -p falcon config` shows exactly one new published
+  port (12411), bound to `192.168.11.10`, never `0.0.0.0`.
+- `FALCON_HERMES_INPUT_HOST_PORT` fails loudly (compose refuses to start)
+  if unset, matching every other required variable in this file.
+- Ports 12412-12415 remain unpublished — confirmed via
+  `docker port graylog-falcon` showing only 9010 and 12411.
+- IRIS confirmed unaffected before and after (same checkpoint discipline
+  as every other privileged change in this PID's history).
+- A real mTLS connection from a HERMES-reachable network path to
+  `192.168.11.10:12411` succeeds exactly as it already does from
+  `falcon-net` directly — no behavioural change to the input itself,
+  only its host reachability.
