@@ -1,0 +1,30 @@
+{
+  "falcon_event_id": "00000031-0000-4000-8000-000000000031",
+  "envelope_version": "v1",
+  "payload_schema_version": "v1",
+  "producer_system_id": "hermes",
+  "producer_component_id": "hermes.signal_engine",
+  "evidence_family": "hermes.signal_state",
+  "evidence_type": "indicator_regime_snapshot",
+  "evidence_class": "DETERMINISTIC_DERIVATION",
+  "produced_at_utc": "2026-09-30T08:05:00Z",
+  "falcon_ingested_at_utc": "2026-09-30T08:05:00Z",
+  "subject_id": "XAUUSD",
+  "instrument_ids": [
+    "XAUUSD"
+  ],
+  "provenance_ref": {
+    "producer_system_id": "hermes",
+    "upstream_ref": "hermes:signals:XAUUSD:M5:2026-09-30T08:05:00Z"
+  },
+  "payload_hash": "sha256:2d3e4f5061728394a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f902131",
+  "retention_class": "standard",
+  "sensitivity_class": "internal",
+  "payload": {
+    "instrument_id": "XAUUSD",
+    "timeframe": "M5",
+    "regime": "BULL_TREND",
+    "session": "london",
+    "signal_type": "indicator_regime_snapshot"
+  }
+}

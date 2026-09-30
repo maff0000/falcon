@@ -635,7 +635,8 @@
         "tron.order_intent",
         "tron.order_submitted",
         "tron.position_state",
-        "tron.trigger_observed"
+        "tron.trigger_observed",
+        "hermes.signal_state"
       ],
       "required_default": null,
       "enum": null,
@@ -656,7 +657,8 @@
       "allowed_families": [
         "helios.strategy_evaluated",
         "helios.strategy_state",
-        "helios.strategy_trigger"
+        "helios.strategy_trigger",
+        "hermes.signal_state"
       ],
       "required_default": null,
       "enum": [
@@ -2815,6 +2817,93 @@
       "pattern": null,
       "unit_precision": "integer milliseconds",
       "authoritative_producer": "tron",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "regime",
+      "type": "string",
+      "description": "HERMES-computed market regime classification for a signal_state snapshot (BULL_TREND/BEAR_TREND/TRANSITION/LOW_VOLATILITY), derived from EMA alignment. Confirmed against the real HERMES source (signal_builder.py's _determine_regime()), not invented.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.signal_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "BULL_TREND",
+        "BEAR_TREND",
+        "TRANSITION",
+        "LOW_VOLATILITY"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "session",
+      "type": "string",
+      "description": "HERMES-computed named trading session (london/newyork/asia/overlap_ldn_ny/off_hours), confirmed against the real HERMES source (utils/trading_hours.py's get_current_session() and utils/hermes_sessions_v1.py's SESSION_NAMES). Deliberately distinct from ares.market_status.session_state's session_id/session_state (ARES session LIFECYCLE state -- PRE_OPEN/OPEN/CLOSING/CLOSED/HOLIDAY -- is a different concept from this geographic/named session, per PID-05's own discovery-phase finding; the two must never be conflated despite the shared word 'session').",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.signal_state"
+      ],
+      "required_default": null,
+      "enum": [
+        "london",
+        "newyork",
+        "asia",
+        "overlap_ldn_ny",
+        "off_hours"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "signal_type",
+      "type": "string",
+      "description": "Free-text classification/name for a hermes.signal_state event (e.g. a specific detected condition or signal shape). No enum is imposed: unlike regime/session, this delivery has no evidenced, closed HERMES-side value set to cite, and would rather leave it open than fabricate one.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.signal_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "signal_natural_key",
+      "type": "string",
+      "description": "The one required identity anchor for hermes.signal_state: a producer-constructed string representing HERMES own real natural key (instrument:timeframe:produced_at_utc). This is NOT a claim that HERMES has a stable independent event id -- PID-05 Section 9/D.6 already established it does not (its SQL (instrument, timeframe, timestamp) key is an upsert key, not an event identity). signal_natural_key is deliberately just an honest string representation of that same real, already-existing natural key, required so the payload carries at least one concrete anchor -- the eventual deterministic falcon_event_id derivation (UUID5, per D.6) is expected to be computed FROM this same natural key at publish time, not from a separately invented identity.",
+      "scope": "payload",
+      "allowed_families": [
+        "hermes.signal_state"
+      ],
+      "required_default": null,
+      "enum": null,
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "hermes",
       "retention_class": "standard",
       "sensitivity_class": "internal",
       "version_introduced": "v1",
