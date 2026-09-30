@@ -1276,3 +1276,529 @@ merely coded or documented — for this discovery PID, "behaviour" means
 every finding above is evidenced against real, current artifacts
 (schemas, registries, HERMES source, the live PID-04 input state, and —
 once run — Section 7.2's live empirical results), never assumed.
+
+---
+
+# Follow-up mandate — Sections B, C, D, E (Architect, via Rogue)
+
+After the Architect accepted the discovery findings above (PR #7 @
+`89998ab`), a bounded follow-up mandate was issued with sections A-F.
+This is not a separate verbatim Architect document the way the original
+13-section mandate was — it was relayed by Rogue in their own words as a
+task dispatch, so the section content below is written in the FORGE
+Engineer's own voice throughout (not a verbatim-preservation exercise
+the way Sections 1-13 above are). Section A and Section F are not
+addressed here. This covers **Section B** (large-payload storage
+investigation), **Section C** (a live empirical rate/concurrency test
+matrix, run by Rogue directly against the real stack, written up here),
+**Section D** (a minimal HERMES contract amendment proposal), and
+**Section E** (credential storage convention, plus a network-
+connectivity finding). Same boundary as the whole of PID-05: read-only/
+design-only, no HERMES modification, no Graylog template mutation, no
+credential installation, no implementation — Section C's own testing
+was itself bounded (hard-capped at 20 attempts per run, explicitly not
+a stress tool, no broad stress testing performed).
+
+## B. Simple large-payload storage — investigation (read-only)
+
+**Question:** can Graylog-managed OpenSearch mappings preserve one
+complete original JSON string in a document's `_source` without
+indexing it as a Lucene `keyword` term — avoiding the 32,766-byte
+term-length failure (Section 7.2 failure mode 2) entirely, rather than
+working around it with field-splitting?
+
+**Investigated via the same jar-inspection method used throughout PID-04
+and this PID** (`graylog.jar` extracted from the running `graylog-falcon`
+container; OpenSearch confirmed as version 2.19.5, per
+`datanode-falcon`'s own bundled distribution directory name).
+
+### What Graylog's own persistent, index-set-level mechanism actually offers
+
+Graylog 7.1.9 has a real, native "Custom Field Mapping" / "Index Field
+Type Profile" system — confirmed via a full class inventory:
+`org.graylog2.indexer.indexset.CustomFieldMapping`,
+`CustomFieldMappings`, `org.graylog2.indexer.indexset.profile.
+IndexFieldTypeProfile`, and the REST resource
+`org.graylog2.rest.resources.system.field_types.FieldTypeMappingsResource`
+(`PUT /system/indices/mappings`, permission `typemappings:create`).
+This is genuinely **index-set-level, persistent Graylog configuration**,
+not a one-off raw OpenSearch template edit: `IndexMapping`/`IndexMapping7`
+(the classes that actually generate the `dynamic_templates` block
+Graylog applies to every index it creates) take the index set's
+`CustomFieldMappings` as a direct input parameter every time a template
+is (re)generated — including at automatic index rotation. **A Custom
+Field Mapping is therefore not at risk of being silently reverted or
+orphaned on the next rotation, because it IS what Graylog uses to
+generate the next rotation's own template — this is the opposite of the
+Architect's flagged risk for a raw, out-of-band OpenSearch edit.**
+
+The exact set of physical types this feature exposes (confirmed from
+`CustomFieldMappings.AVAILABLE_TYPES`, a fixed, small, user-selectable
+list — not arbitrary raw OpenSearch mapping parameters): `string`
+(keyword/aggregatable), `string_fts` (full-text/`text`), `long`,
+`double`, `date`, `boolean`, **`binary`** ("Binary Data"), `geo-point`,
+`ip`.
+
+**Neither of the two raw OpenSearch mapping parameters the mandate
+specifically asked about — `"index": false` and `ignore_above` — is
+exposed as a configurable option through this feature.** Confirmed
+further: Graylog's own default dynamic-string template
+(`IndexMapping`/`IndexMapping7`) does not set `ignore_above` anywhere
+either — this is the direct, evidenced root cause of why Section 7.2's
+failure mode 2 is a hard, whole-document indexing failure rather than a
+graceful per-field skip: if Graylog's own default template set
+`ignore_above` (as, for example, Kibana's own default index patterns
+historically have), an oversized field would simply be excluded from
+the index while the rest of the document still indexed successfully —
+Graylog's pinned build does not do this by default.
+
+**However, the `binary` physical type achieves the functional outcome
+the mandate is actually asking for, through this same persistent,
+Graylog-native mechanism.** OpenSearch's native `binary` field type
+(standard, stable OpenSearch/Elasticsearch behaviour, not something
+specific to 2.19.5 — not independently re-verified live in this pass,
+per the same read-only/no-execution boundary as the rest of this
+section) stores a base64-encoded value and is **not indexed at all** —
+Lucene never tokenizes it into a term, so the 32,766-byte keyword
+term-length ceiling simply does not apply to it. The value remains
+fully retrievable via `_source` (as it does for every field, regardless
+of type, since Graylog does not disable `_source` storage) and via the
+Graylog API/GUI. Mapping the original-payload field to `binary` via a
+Custom Field Mapping is therefore functionally equivalent to `"index":
+false` for this specific purpose, using an option that already exists
+in Graylog's own supported, persistent configuration surface — no raw
+OpenSearch template edit needed at all.
+
+**One real design requirement this surfaces:** OpenSearch's `binary`
+type expects the submitted value to already be a base64-encoded string
+— a raw JSON string would not be valid input as-is. This does not need
+to fall on HERMES: Graylog's own pipeline rule DSL already has a native
+`base64_encode()` function (confirmed present:
+`org.graylog.plugins.pipelineprocessor.functions.encoding.Base64Encode`),
+so the existing "FALCON Ingestion" pipeline could base64-encode the
+original-payload field itself (the same place PID-03's `parse_json()`
+un-flattening already happens), keeping the producer-side contract
+exactly as simple as it is today — HERMES would still just send a plain
+JSON string in an ordinary additional field. Base64 encoding inflates
+size by roughly 33%, which should be weighed against the 2,097,152-byte
+transport ceiling when choosing an operational size limit for this
+approach — see Section C below for the good news on the rate/
+concurrency question specifically (the failure-mode-3 silent-loss
+behaviour is now characterised as tied to the original FTE test
+methodology, not to message size or a stable publisher's own send
+pattern).
+
+### Proposed isolated, reversible DEV test (NOT executed here — proposal only)
+
+1. Create a **new, throwaway Graylog index set** (e.g. "PID-05 Binary
+   Field DEV Test") via Graylog's own supported index-set-creation API
+   — a fresh, empty index, no producer traffic routed to it, entirely
+   separate from `falcon-evidence_0` and every `FALCON: *` stream.
+2. On that new index set only, add a Custom Field Mapping:
+   `field_name = "_pid05_binary_test_field"`, `type = "binary"`
+   (`PUT /api/system/indices/mappings`).
+3. Send exactly one synthetic GELF test message (reusing
+   `tests/fte/pid05_size_probe.py`'s existing conventions — a unique
+   `_fte_send_marker`, synthetic content only) into a stream routed to
+   that throwaway index set, with a base64-encoded synthetic payload in
+   `_pid05_binary_test_field` sized comfortably past 32,766 bytes (e.g.
+   100 KB pre-encoding).
+4. Confirm via the Graylog search API: the message indexes successfully
+   (no "immense term" error), is searchable by its marker, and the
+   retrieved `_source` value, base64-decoded, is byte-for-byte identical
+   to the original synthetic payload.
+5. **Rollback:** delete the throwaway index set (and its underlying
+   index) entirely via Graylog's own supported API. Nothing about
+   `falcon-evidence_0`, its streams, its pipeline, or its real evidence
+   is ever touched at any point in this test.
+
+### Comparison: `binary`-typed single field vs. the proven field-splitting mitigation
+
+| | Non-indexed `binary` field (this section) | Field-splitting (PID-05 discovery, already proven) |
+|---|---|---|
+| **Simplicity** | One field, one Custom Field Mapping applied once per index set; the pipeline needs one new `base64_encode()` call. | Requires computing a fixed number of reused field names and a chunking/reassembly convention on both the write side (pipeline or producer) and any consumer that wants to reconstruct the original payload from N fields. |
+| **Exact-retrieval fidelity** | Direct: one field, `_source` value, base64-decode. No reassembly logic to get wrong. | Requires correctly reassembling chunks in the right order from N field names — an extra failure surface (e.g. an off-by-one in chunk ordering) that the single-field approach doesn't have. |
+| **Index/rotation compatibility** | Confirmed persistent across rotation (see above — it's what generates the next rotation's own template). | Also persistent (the chunk field names are just ordinary dynamically-mapped `keyword` fields, each individually under the term-length ceiling) — no rotation risk either way. |
+| **Ongoing operational maintenance** | One Custom Field Mapping to maintain per index set; base64 overhead (~33%) is the only ongoing cost. | No special mapping to maintain, but the maximum total content size is coupled to (chunk size × field count), and — per Section 7.2's own finding — the aggregate size where this was tested interacts with the still-unexplained failure-mode-3 rate/concurrency issue; that risk exists for both approaches equally, since it's about aggregate message size, not field shape. |
+
+**Recommendation, not a false-balance both-ok conclusion:** the
+`binary`-typed single-field approach is clearly better for this specific
+purpose — it is simpler, has no reassembly failure surface, needs no
+chunk-naming convention, and achieves genuine non-indexed storage rather
+than working around the indexing limit by staying under it per-field.
+The field-splitting mitigation remains valuable as a proven fallback and
+as evidence of the underlying platform behaviour, but if the Architect
+is choosing one approach to standardise on for full-payload
+preservation, **the `binary` Custom Field Mapping is the recommended
+design**, informing Section D's own payload-preservation proposal below.
+**Status: proposed, not executed.** This has not been executed or
+proven live — it is a design recommendation from static jar-level
+investigation, and the DEV test above is a proposal for the Architect's
+consideration, pending explicit Architect authorisation to actually run
+it. Consistent with this whole mandate's discovery-only, read-only/
+design-only framing, this delivery does not unilaterally decide to
+execute it; Rogue has likewise deliberately not run it. Until that
+authorisation is given and the test (or an equivalent) is actually run,
+the `binary`-field recommendation above should be treated as a
+well-reasoned proposal, not a proven design.
+
+## C. Rate/concurrency silent-loss characterisation (Rogue, live empirical test matrix)
+
+**This materially reframes Section 7.2/7.3's own failure-mode-3
+finding above — read this alongside those sections, not as a
+replacement for them.** Section 7.2 documented a real, reproduced
+silent-loss failure (5 of 13 attempts, ~800 KB payloads, silently lost
+with zero trace) and explicitly left its trigger uncharacterised beyond
+"rate- or concurrency-sensitive," flagging a dedicated concurrency/
+throughput test matrix as necessary future work. This is that matrix.
+
+### Tool
+
+`tests/fte/pid05_rate_concurrency_probe.py` (committed by Rogue, not
+reviewed by the FORGE Engineer as code — folded in here as a findings
+write-up of Rogue's own execution, same as Section C's data throughout
+this document is Rogue's, not FORGE's, work). Sends field-split (each
+chunk ≤32,766 bytes, using PID-05's own already-proven mitigation, so
+this test isolates the rate/concurrency variable from failure mode 2
+entirely), synthetic payloads at controlled sizes, varying two
+independent variables: `--connection-mode {fresh,reused}` and
+`--interval-ms`. Records per-attempt client send timestamp, indexed
+true/false, and server receive timestamp when found. **Hard-capped at
+`--count 20`, refuses above that** — explicitly not a stress tool,
+consistent with the mandate's "no broad stress testing" bound.
+
+### Test matrix and results
+
+1. **Sizes 4 KiB / 32 KiB / 128 KiB / 512 KiB / ~800 KiB (819,200
+   bytes), both connection modes (`fresh`/`reused`), max rate
+   (interval=0), 5 attempts each, all from a single stable sending
+   process: 30/30 succeeded, zero failures, at every size and every
+   connection mode.**
+2. The same ~800 KiB size at a moderate rate (200 ms interval) from a
+   stable process: **5/5 succeeded.**
+3. **The exact original discovery-phase methodology reproduced
+   precisely** — a brand-new, short-lived `docker run --rm --network
+   falcon-net` container per single message, ~1 second apart, matching
+   the original bisection loop — at ~800 KiB: **failure reproduced, 5
+   of 13 attempts failed silently** (zero server-side error trace,
+   consistent with the original Section 7.2 finding).
+4. The same ephemeral-container-per-message pattern at 4 KiB: **8/8
+   succeeded, zero failures.**
+
+### Conclusion — evidenced, not speculative
+
+The silent-loss behaviour is **not** associated with message rate,
+connection reuse, transport decoding, or Graylog-side buffering when
+messages originate from a stable, already-running sending process —
+that combination was 100% reliable across every size tested, including
+the previously-suspect ~800 KiB region (tests 1 and 2). The loss is
+specifically associated with the **combination of (a) each message
+originating from a freshly-spawned, short-lived Docker container
+attached to `falcon-net`, and (b) a large payload** — small payloads via
+the same ephemeral-container pattern showed zero failures (test 4), and
+large payloads via a stable process showed zero failures (tests 1-2);
+only the combination of both factors (test 3) produced the ~38% failure
+rate (5/13) originally observed in Section 7.2.
+
+**Stated plainly, as instructed, not buried:** this means the original
+"unresolved silent-loss" finding in Section 7.2 was very likely an
+artifact of the *original FTE testing methodology itself* — spinning up
+a throwaway Docker container per test message — not a property of
+Graylog, the transport, or the indexing pipeline that a real production
+HERMES publisher would ever actually encounter. HERMES runs as a single
+long-lived service process, not as an ephemeral per-message container;
+that is exactly the pattern (tests 1-2 above) that tested 100% reliable
+here, across every size including the region that originally failed.
+
+### What is NOT established — do not overstate this
+
+**No root cause is selected here, per the Architect's explicit
+instruction not to select one speculatively.** A plausible hypothesis
+exists — TCP slow-start / kernel send-buffer flush timing racing
+against the ephemeral container's `--rm` network-namespace teardown for
+a payload large enough to need more than one send cycle, while a 4 KiB
+payload completes before any such race would matter — but this is
+**a plausible explanation requiring further investigation if kernel-
+level certainty is ever needed, not a confirmed root cause.** No
+kernel- or network-level instrumentation was performed to confirm or
+rule out this or any other specific mechanism within this bounded test
+pass.
+
+### Consequence for Section 7.3's operational-limit recommendation
+
+Given this evidence, the 512 KiB interim recommendation in Section 7.3
+above can now be stated with meaningfully more confidence **for the
+actual intended architecture** (HERMES as a stable, long-running
+publisher process) — the specific failure this delivery was most
+worried about (a payload size that tests fine once but is silently lost
+under realistic publishing conditions) has direct counter-evidence at
+sizes at and above the recommended limit, tested repeatedly, at both
+connection-reuse modes, at both zero and moderate send intervals.
+
+This is **not** grounds for treating 512 KiB as an absolute guarantee,
+for two honestly-stated reasons: first, this test matrix — while
+thorough for the dimensions it covered — did not test true concurrent/
+parallel connections from one process, nor rates meaningfully higher
+than the 0-200 ms interval range tested, staying within the mandate's
+own "no broad stress testing" bound; second, the underlying mechanism
+remains an unconfirmed hypothesis, not a proven-and-closed root cause.
+512 KiB remains a well-evidenced interim figure, substantially
+strengthened by this test matrix, not an absolute guarantee.
+
+IRIS (`graylog`/`graylog-mongo`/`graylog-elasticsearch`) reconfirmed
+unaffected throughout this test matrix — `docker ps`, uptime unchanged
+at ~5 weeks.
+
+## D. Proposed minimal HERMES contract amendment (design only — NOT authorised, NOT implemented)
+
+**Scope note:** this is a proposal for the Architect's consideration,
+building directly on Section 4's field-registry gap analysis and
+Section 8's real-signal trace. It does not touch `registry/`,
+`schemas/`, `tests/fixtures/`, or `tests/validator/` — actually
+registering any of this remains a separate, explicitly-authorised PID-01
+amendment, not something this discovery pass does. Kept in this same
+file rather than a separate document: every claim below cites a specific
+finding already established earlier in this same file (Sections 4 and
+8), and a reader needs both side by side to evaluate the proposal —
+splitting them across files would only make that cross-referencing
+harder for no real benefit.
+
+### D.1 Proposed evidence family
+
+**`hermes.signal_state`** (name proposed, not final) — a single,
+general evidence family for HERMES's actual computed-signal output
+(candles/indicators/regime state, per Section 8's trace), generic
+enough to avoid a schema per indicator. Reasoning: Section 8 already
+confirmed no existing registered family fits this shape —
+`hermes.market_quality`/`hermes.health` (the two families the earlier
+discovery report identified as closest) describe feed-quality/health
+transitions, not a computed indicator/regime snapshot. `evidence_class:
+"DETERMINISTIC_DERIVATION"` (Section 8's own proposed mapping) — it's
+computed from candles, not a raw source fact.
+
+### D.2 Proposed producer component
+
+**`hermes.signal_engine`** (name proposed, not final) — Section 8 found
+neither of HERMES's two existing registered components
+(`hermes.market_data_service`, `hermes.quality_monitor`) fits a
+signal/indicator-computation service well: "market_data_service"
+implies raw feed handling, not derived computation; "quality_monitor"
+implies feed-quality observation, not indicator calculation. A name
+naming what the real code (`signal_builder.py`) actually does —
+computing and publishing indicator/regime signals — is a closer
+semantic fit and avoids stretching an existing component's meaning.
+
+### D.3 Envelope — no change
+
+Reuse the existing compulsory envelope exactly as-is (Section 4.1
+above): `falcon_event_id`, `producer_system_id`/`producer_component_id`
+(bound to a HERMES dedicated input per PID-04, per Section 10),
+`evidence_family`/`evidence_type`/`evidence_class`, `produced_at_utc` +
+`falcon_ingested_at_utc`, `instrument_ids` (populated when relevant,
+never fabricated, per the mandate's own instruction). No new envelope
+field is proposed.
+
+### D.4 Smallest useful subset of optional searchable fields
+
+Only fields grounded in real, existing HERMES data (Section 4.2 and
+Section 8's own SQL citations — `signals.regime`, `signals.session`,
+`signals.timeframe`, `signals.instrument`) are proposed:
+
+- **instrument** — via the existing `instrument_ids` envelope array
+  (already available, no new field needed).
+- **timeframe** — proposed as a new optional field usable by
+  `hermes.signal_state` (today registered only for HELIOS families;
+  proposing HERMES be added to its `allowed_families`, OR a new
+  HERMES-scoped equivalent if the registry's per-family-list convention
+  is preferred — an implementation-phase decision, not resolved here).
+- **regime** — new optional field, not currently registered at all
+  (confirmed absent in Section 4.2). Grounded directly in
+  `signals.regime`.
+- **regime_timeframe** — new optional field, paired with `regime` per
+  the mandate's own "a market regime must retain its associated
+  timeframe when available" instruction. HERMES's `signals` table
+  doesn't have a separate regime-timeframe column today (regime and
+  timeframe are both present but not explicitly paired in the schema) —
+  flagged honestly as something the eventual publisher would need to
+  derive (the signal's own `timeframe` column IS the regime's
+  timeframe, since regime is computed per-timeframe in the same row),
+  not something HERMES needs new instrumentation for.
+- **session** — new optional field, grounded directly in
+  `signals.session`.
+
+**Explicitly not proposed** (no real HERMES data grounds them today,
+per Section 4.2's own gap analysis): `signal_type`, `bias`/
+`bias_timeframe`, `volatility_state`/`volatility_timeframe`,
+`liquidity_state`/`liquidity_timeframe`, `supporting_event_ids`,
+`strategy_id`, `trade_suggestion_id`, `execution_venue`. Per the
+mandate's own instruction, these are omitted rather than populated with
+fabricated values or defaults.
+
+### D.5 Original payload preservation
+
+Informed directly by Section B above: the original HERMES JSON payload
+(the full indicator/regime record, not just the searchable subset)
+should be carried as a single additional field, base64-encoded, mapped
+via a Custom Field Mapping to Graylog's `binary` physical type — not
+split across multiple chunk fields, and not flattened into individual
+per-attribute FALCON fields (which would require a schema change per
+new HERMES attribute, exactly what the mandate prohibits). The
+`base64_encode()` step happens in the pipeline (extending the existing
+"FALCON Ingestion" pipeline, PID-03's own established pattern), not in
+HERMES — the producer-side contract stays exactly as simple as sending
+one plain JSON string in one additional field.
+
+### D.6 Event identity and revision semantics
+
+Section 9 already established the real problem: HERMES's only natural
+key is `(instrument, timeframe, timestamp)`, used as a SQL **upsert**
+key — not a stable, independent event identity. Two things need
+resolving, reasoned through explicitly rather than hand-waved:
+
+**Deterministic `falcon_event_id` derivation:** propose a UUID5 (name-
+based, deterministic) derived from a fixed namespace UUID plus the
+string `f"hermes.signal_state:{instrument}:{timeframe}:{timestamp_utc_iso}"`.
+This gives a stable, reproducible `falcon_event_id` for "the same
+logical signal" without HERMES needing any new persisted identity
+concept — the derivation is pure and can be computed identically by
+the publisher on every run, satisfying PID-01's own requirement that
+`falcon_event_id` be "stable across producer retry of the same logical
+evidence emission" (per `field_registry.v1.json`'s own description of
+that field, already cited).
+
+**What "revision" means when the same natural key is republished with
+updated values (e.g. a candle's indicators recompute as more data
+arrives):** this is **the same evidence, updated — a new revision of
+the same event identity**, not a new, causally-linked-but-separate
+evidence item. Reasoning: PID-01's envelope already has a purpose-built
+mechanism for exactly this — `revision_id`/`revision_sequence` (both
+already registered, already generic) plus, if the previous emission's
+specific event needs explicit superseding, `supersedes_event_id`
+(already registered, already generic, and already enforced by PID-03's
+"self-referential supersession" flag rule). Using `causation_id`
+instead would be semantically wrong here: `causation_id` is a pointer
+to a *different*, specific *causing* event (per its own registry
+description, already cited in Section 4.1 discussion), not a mechanism
+for "this is an updated version of the same logical thing" — a
+recomputed candle isn't *caused by* its own earlier computation, it
+*supersedes* it. Concretely: same deterministic `falcon_event_id` is
+NOT reused across revisions (since PID-01's identity law requires
+`falcon_event_id` to be immutable per event, already cited in the field
+registry's own description — "NEVER derived solely from payload
+content"); instead, each republish gets its own new `falcon_event_id`
+(a fresh UUID5 over the same natural key would collide, so the
+derivation would need to also fold in a revision number or the actual
+recomputation timestamp — an implementation-phase detail, not resolved
+here) and sets `supersedes_event_id` to the prior emission's
+`falcon_event_id`, with `revision_sequence` incrementing. This preserves
+FALCON's own "do not enrich an old event with market context learned
+later — historical evidence must preserve what was known at the time"
+principle (mandate Section 5) exactly: the old revision stays exactly
+as it was recorded, and the new one is a distinct, explicitly-linked
+event, not a silent mutation.
+
+### D.7 Explicitly avoided, per the mandate's own instruction
+
+No per-indicator schema (e.g. no separate registered field for
+`rsi_14`, `atr_14`, each EMA, etc. — all of that lives inside the
+preserved original-payload field, per D.5, searchable only via the small
+D.4 subset). No compulsory contextual enrichment — every D.4 field
+remains optional, omitted when not available, never defaulted or
+fabricated.
+
+## E. Credential storage convention, and a network-connectivity finding
+
+### E.1 Durable producer mTLS credential storage (design proposal)
+
+**Motivation, directly from this PID's own experience:** the HERMES
+PID-04 test client cert/key were generated inside the PID-04 worktree's
+local, gitignored `deploy/secrets/pid04-mtls/clients/` directory, and
+were genuinely, permanently lost when that worktree was deleted
+post-merge — the Architect's own correct, routine cleanup instruction.
+Only the server's trust-copy of the old *public* cert survived, inside
+`graylog-falcon`'s own persistent volume; the private key had no other
+home at all. This PID had to regenerate a fresh keypair before capacity
+testing could proceed (recorded earlier in this file's Section 10
+findings).
+
+**Proposed convention, mirroring the pattern already established for
+`deploy/.env` in PID-02/03:** producer mTLS credential material
+(private keys especially — public certs are already safely durable
+inside `graylog-falcon`'s own persistent volume, per PID-04) should live
+in a durable location on the **canonical, non-worktree checkout**
+(`dell-debian:/srv/falcon`), never only inside a disposable
+`/srv/falcon-worktrees/wo-*` directory — for example
+`dell-debian:/srv/falcon/deploy/secrets/pid04-mtls/` (the same relative
+path convention already used inside worktrees, just rooted at the
+canonical checkout instead of a worktree that will eventually be
+deleted). Same permissions/coverage as already established: directories
+`700`, keys `600`, certs `644`, and the canonical checkout's own
+`.gitignore` already covers `**/secrets/**` (confirmed present at
+`/srv/falcon/.gitignore` — same rule as every worktree's, since it's
+version-controlled), so no new gitignore work is needed, only a
+placement-location discipline change.
+
+**This applies to every current and future producer's client material,
+not just HERMES's** — ARES, HELIOS, and both TRON identities generated
+during PID-04 exist under exactly the same worktree-local risk today
+(their worktree has since been merged and deleted, same as PID-04's
+own history) — this is not a HERMES-specific gap, it is a standing
+open item for whoever next needs to rotate or re-derive any of those
+four other producers' client keys, worth HELM's attention independent
+of PID-05.
+
+### E.2 Network connectivity — a producer must never attach directly to `falcon-net` (Rogue's finding, formalised here)
+
+Rogue tested, live and read-only, whether the Architect's "direct
+second Docker network attachment" option (PID-05's own original
+Section 10 finding: attach a producer container to `falcon-net` as a
+second network) is actually safe, independent of the mTLS/PID-04
+question entirely. **It is not.**
+
+**Evidence:** from a throwaway container attached to `falcon-net`,
+`GET http://datanode-falcon:9200/_cluster/health` and
+`GET http://datanode-falcon:9200/_cat/indices` both returned full, real
+data with **zero credentials of any kind** — including a direct listing
+of `falcon-evidence_0`, the live evidence index, showing 450 real
+documents. No write or delete operation was attempted against real
+data; only these two read-only calls were made.
+
+**Conclusion — specifically and only about OpenSearch, not "the backing
+services" generally (this was checked, not assumed, for both):**
+`datanode-falcon`'s OpenSearch REST API is completely unauthenticated
+over plain HTTP on `falcon-net`. Anything attached to that network
+almost certainly has full unauthenticated read access to the raw
+evidence store — and, since nothing about an unauthenticated OpenSearch
+REST API distinguishes read from write/delete at the network layer,
+very likely full write/delete access too (not tested, per the read-only
+boundary on this investigation) — completely bypassing Graylog's own
+producer authentication, PID-04's mTLS/identity enforcement, and
+PID-03's validation pipeline in one step. **MongoDB, by contrast, is
+confirmed properly authenticated on the same network:**
+`docker exec mongodb-falcon mongosh --quiet --eval
+"db.adminCommand({listDatabases:1})"` returned
+`MongoServerError: Command listDatabases requires authentication` — no
+unauthenticated access was obtained. **The actual security boundary
+protecting FALCON's evidence today is network isolation itself, not any
+authentication on the data layer — and this is true of OpenSearch
+specifically, not of every backing service on `falcon-net`.**
+
+**This is a strong, evidence-based argument to reject — not merely
+review — a second-network-attachment connectivity approach for any
+producer, HERMES included**, unless OpenSearch's own authentication on
+`falcon-net` is independently fixed first (MongoDB already requires no
+such fix — it is already correctly authenticated). Publishing only the
+specific dedicated Graylog input ports to the host (PID-05's own
+original Section 10 finding — e.g. `192.168.11.10:1241x`) remains the
+only network-connectivity approach evaluated so far that does not hand
+a producer direct, unauthenticated access to FALCON's backing data
+stores, and should be treated as the only acceptable option unless that
+separate fix happens.
+
+**Open question flagged, not resolved here:** whether `falcon-net`'s
+current unauthenticated-OpenSearch posture specifically (confirmed
+here; MongoDB is confirmed NOT part of this gap, per the check above) is
+itself something HELM should address regardless of HERMES or PID-05 —
+this is a standing FALCON-wide finding, not a HERMES-integration-
+specific one, and arguably belongs on HELM's own backlog independent of
+whether or when HERMES publishing is ever implemented.
