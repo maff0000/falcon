@@ -2366,3 +2366,202 @@ way a third and fourth time); and the **security finding**
 document's own Section E.2, with MongoDB's confirmed-authenticated
 status stated precisely so the finding isn't over-generalised). None of
 these four actions has been executed by this delivery or by Rogue.
+
+---
+
+## Stage 1 — live verification (Rogue, live, against the real stack)
+
+**Attribution note:** everything in this section reports Rogue's own
+live execution and findings, relayed to and written up by the FORGE
+Engineer — it was not independently executed by the FORGE Engineer,
+consistent with this PID's standing execution split (FORGE Engineer
+builds/verifies offline artifacts only; Rogue performs all live,
+privileged Graylog work). Where this section states something is
+"confirmed," that means confirmed by Rogue against the real stack, not
+inferred.
+
+### Installation
+
+Content-pack rev 4 installed following the established PID-04
+precedent: the pipeline entity plus the two modified rules ("FALCON -
+flag unknown component", "FALCON - flag unregistered evidence family")
+were deleted first to avoid `DivergingEntityConfigurationException`,
+then the pack was reinstalled and the expected stream/input duplication
+artifacts (the same install-time side effect already documented in the
+PID-04 runbook) were cleaned up. Final state confirmed clean: **7
+streams, 5 inputs, 29 rules**, pipeline correctly connected to the
+Default Stream, stage structure **[4, 18, 7]** — stage 0 grew from 3 to
+4 rules for the new encode rule, exactly as designed; stage 1 (18) and
+stage 2 (7) unchanged, confirming no unintended rule was added or lost
+during the delete/reinstall cycle.
+
+### PID-04 regression
+
+Confirmed clean for **HERMES specifically** — the only producer a valid
+mTLS cert currently exists for: valid-traffic, identity-spoof, and
+connection-level tests all passed unchanged from PID-04's own baseline.
+**ARES/HELIOS/TRON could not be regression-tested** — their certs are
+the pre-existing, already-flagged (HELM handover brief, Section 3)
+lost-credential gap, not a new problem introduced by this PID. Recorded
+here as a genuine limitation on this regression check's completeness,
+not glossed over: a clean HERMES-only regression result does not, by
+itself, prove ARES/HELIOS/TRON's own stage-1/stage-2 rules are
+unaffected — though the diff review (see the Content-pack section
+above) already independently confirmed no existing rule's prior
+comparisons were altered, byte for byte.
+
+### hermes.signal_state live verification
+
+All done via direct OpenSearch queries against both the real
+`falcon-evidence_0` and a disposable isolated index+stream — not via
+the FTE harness's own automated search-based verification, which was
+blocked by a genuine Graylog quirk (see "Second finding" below, not a
+bug in the harness itself).
+
+| Mandate check | Result |
+|---|---|
+| Valid signal accepted, routed to "FALCON: HERMES evidence" | **CONFIRMED** — multiple messages, `falcon_validity: VALID`, correct stream membership |
+| Correct evidence family / producer identity | **CONFIRMED** — `evidence_family: hermes.signal_state`, `producer_component_id: hermes.signal_engine` |
+| `instrument_id`/`timeframe` searchable | **CONFIRMED** — `payload_instrument_id`/`payload_timeframe` present, correctly un-flattened |
+| `regime`/`session` searchable when supplied | **CONFIRMED** — `payload_regime`/`payload_session` present |
+| Missing optional context (instrument/timeframe/regime all omitted) accepted | **CONFIRMED** — `falcon_validity: VALID` with those fields genuinely absent |
+| Missing mandatory **envelope** field (`falcon_event_id` removed) quarantined | **CONFIRMED** — `falcon_validity: INVALID`, `falcon_missing_required_field: true`, routed to Quarantine |
+| Spoofed producer identity (claims `ares` via HERMES's own input/cert) quarantined | **CONFIRMED** — `falcon_identity_mismatch: true`, `producer_system_id` preserved as the false claim `ares`, routed to Quarantine — same proven FF-PRODUCER-IDENTITY-01 pattern as PID-04 |
+| Complete original JSON preserved, base64 round-trip | **CONFIRMED** — for a 192-byte realistic payload and all four mandate sizes (16384/65536/262144/524288 bytes); decoded lengths exactly match target sizes in every case, and `hermes_signal_raw_json` (the original field) confirmed absent after encoding every time, proving `remove_field()` worked correctly every time |
+| Existing families remain functional | **CONFIRMED** — no existing rule/routing logic touched (per the diff review before testing); HERMES's own existing traffic unaffected (per the PID-04 regression above) |
+| No IRIS impact | **CONFIRMED** — via `docker ps`, unchanged ~5-week uptime, before/during/after |
+
+### MAJOR FINDING — pre-existing, universal gap: live pipeline does not enforce per-family required payload fields
+
+**This is a genuine, significant architectural gap, surfaced for the
+first time by this delivery's testing — not caused by Stage 1, and not
+specific to `hermes.signal_state`.** Documented here prominently and
+deliberately, per the Architect's own standing evidence-rigour
+expectations, rather than folded quietly into a routine checklist row.
+
+**What was found:** testing mandate item #4 ("missing mandatory
+[payload] identity field quarantined," using
+`missing_signal_natural_key.json`) — the message was accepted as
+**`falcon_validity: VALID`**, not quarantined.
+
+**Root cause, confirmed by reading the live rule source directly, not
+assumed:** the live "FALCON - flag missing required fields" rule's own
+DSL only checks 6 fixed, hardcoded **envelope-level** fields
+(`falcon_event_id`, `producer_system_id`, `evidence_family`,
+`evidence_type`, `produced_at_utc`, `payload_hash`). It has no knowledge
+of, and never checks, any family's own `required_payload_fields` from
+`registry/event_family_registry.v1.json` — because Graylog's pipeline
+rule DSL cannot read the JSON registry at runtime (a constraint already
+confirmed independently during PID-04's own work).
+
+**Confirmed universal, not new, and not specific to this family:** an
+existing, already-live, already-tested-elsewhere fixture
+(`hermes_market_fact.json`) was taken, its own required payload field
+(`fact_id`) was stripped, and it was sent live — **also accepted as
+VALID**, not quarantined. This proves the gap has existed since
+whichever PID first registered a family with a required payload field,
+predates this PID entirely, and affects every existing family
+(HERMES/ARES/HELIOS/TRON) equally — it is not something Stage 1
+introduced or could have introduced.
+
+**Confirmed the mandate's own literal wording IS correctly enforced:**
+the mandate specifically asked for "missing mandatory **envelope**
+field" quarantine (not payload field), and `hermes_signal_state.json`
+with `falcon_event_id` removed was correctly quarantined — see the
+table above. The gap is specific to **payload-level** required-field
+enforcement, not envelope-level, which has always worked correctly.
+
+**What this means, precisely:** the offline PID-01 validator
+(`tests/validator/cli`, used for fixture/CI testing) has always
+correctly enforced per-family `required_payload_fields` — this is real,
+proven, and not in question. But the **live** Graylog pipeline has
+never enforced this same check for **any** family. This is a real,
+previously-unknown gap between what CI proves and what the live system
+actually enforces at the payload level, discovered only because this
+delivery's live testing happened to exercise a payload-level-omission
+scenario for the first time — every prior PID's live testing focused on
+envelope-level/identity/transport concerns, never payload-level
+completeness.
+
+**Explicitly out of scope for Stage 1 — do not patch silently:** per
+the coordinator's own instruction, this is a separate, pre-existing
+architectural question that belongs to the Architect's own decision
+(the fix would need either a large per-family DSL rule enumerating each
+family's own required payload fields directly in pipeline rule source —
+mirroring the existing enumerated-value pattern this PID's own Content-
+pack section describes — or a different enforcement mechanism
+entirely). **No fix has been attempted, proposed in code, or applied as
+part of this PID.** Flagged here for visibility and for the Architect's
+own prioritisation, exactly as instructed — not silently worked around,
+not silently left undocumented.
+
+### Second finding — a real Graylog operational quirk: fresh index sets' active write index has no time-range metadata
+
+A genuine Graylog behaviour, not a bug in anything built for this PID:
+a newly-created index set's currently-active (not-yet-rotated) write
+index does not get its time-range metadata calculated. This makes
+Graylog's `/api/search/universal/relative` (relative time-range) search
+endpoint silently return **zero results** for data that is confirmably
+present — verified directly via raw OpenSearch `_search`, which showed
+the documents genuinely exist with correct field values. Neither an
+explicit `POST /api/system/indices/ranges/rebuild` nor forcing another
+index rotation fixed this for the still-open index.
+
+**This is why `tests/fte/pid05_stage1_signal_state_tests.py`'s own
+automated search-based verification could not find any of the messages
+it sent, even though every one of them landed correctly.** Rogue
+reviewed the harness's own code directly and confirmed **the harness is
+correct as written** — this is not a defect in what the FORGE Engineer
+built; it is purely this Graylog time-range-metadata quirk affecting the
+search endpoint the harness (correctly) uses.
+
+**Standing note for future use of this harness:** it needs either (a) a
+documented pre-condition that it is only reliable once the isolated
+index set has undergone at least one real, natural rotation with a
+subsequent index actually open, or (b) a fallback direct-OpenSearch
+verification path for a genuinely fresh isolated index set. Which of
+the two is the better fix is left as a future call for whoever next
+runs or extends this harness — not resolved here, and explicitly not
+attempted as part of this delivery, to avoid scope creep into what was
+originally a documentation-only follow-up round.
+
+### Minor finding — `remove_field()` deprecation warning
+
+Graylog logs a deprecation warning for `remove_field` when the new
+pipeline rule runs (`WARN: ... deprecated function remove_field`). It
+still works correctly — confirmed by every round-trip test in the table
+above, including all four mandate payload sizes. Worth a standing note
+that a future Graylog upgrade may require migrating this rule (and any
+other rule using `remove_field()`, including any future family that
+reuses this same binary-field pattern) to whatever the non-deprecated
+replacement function turns out to be. No action taken now; flagged for
+whenever Graylog is next upgraded.
+
+### Process note — worktree secrets double-mount (not a finding, a convention)
+
+The cert-location issue (already tracked at Section E.1 as "durable
+canonical storage") was hit again for this round's live testing: a new
+worktree never has `deploy/secrets/` populated, since it is gitignored
+and git worktrees do not share untracked files with each other or with
+the canonical checkout. Rogue worked around this by double-mounting
+`/srv/falcon/deploy/secrets` over the worktree's own path in every
+docker-run test invocation. This is not a new gap — it confirms E.1's
+"durable canonical location" fix is the correct one — but it does mean
+**every future worktree-based FTE test session will need this same
+double-mount pattern** until a small wrapper script is written to do it
+automatically. Suggested as a convention for future FTE runs from a
+worktree, not yet codified into a script.
+
+### Net Stage 1 verdict
+
+hermes.signal_state / hermes.signal_engine are live, correctly
+identity-checked, correctly routed, correctly payload-preserved
+(binary-field mechanism proven end-to-end at all four mandate sizes),
+and correctly envelope-level-quarantined on identity/spoofing/
+missing-envelope-field failure modes. Stage 1 itself is functionally
+complete and verified. The one major finding above is a real,
+pre-existing, universal architectural gap that Stage 1's testing
+surfaced but did not cause and does not fix — it is handed to the
+Architect for prioritisation, separately from Stage 1's own closure,
+and a fresh Auditor pass is expected before any Stage 1 stop-gate
+report is compiled, specifically because of this finding's significance.
