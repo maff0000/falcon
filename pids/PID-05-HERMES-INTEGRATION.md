@@ -539,9 +539,17 @@ infrastructure configuration merely to make larger tests pass.
 > **Failure mode 1 — transport frame limit (matches the Section 7.1
 > bytecode prediction exactly):** exactly 2,097,152 bytes (the
 > configured `max_message_size`) passes the transport/TLS layer cleanly
-> in a single field. One byte past it: `TooLongFrameException: frame
-> length exceeds 2097152 ... discarded`, connection reset client-side,
-> message never reaches the pipeline at all. **This is the only one of
+> in a single field. Exceeding the configured limit triggers
+> `TooLongFrameException: frame length exceeds 2097152 ... discarded`,
+> connection reset client-side, message never reaches the pipeline at
+> all — confirmed via a surviving log entry at 2,113,536 bytes (~16 KB
+> over the limit). **The general failure mode and the exact configured
+> limit (2,097,152 bytes) are both solidly confirmed; the precise
+> minimal-overshoot byte was not separately isolated the way the mode-2
+> boundary below was** — unlike mode 2's exact 32,766/32,767 bisection,
+> this campaign did not test the literal +1-byte case for mode 1
+> specifically, so no claim of a precision this campaign didn't actually
+> establish is made here. **This is the only one of
 > the three failure modes where a client-side error is actually
 > meaningful** (a real connection reset, not the TLS-1.3-client-lies
 > situation already documented for PID-04) — confirmed by log
@@ -825,7 +833,7 @@ Do not weaken authenticated producer checks.
 > figure below cites the actual file/line/table it came from.
 >
 > 1. **Originating domain object:** a computed signal record combining
->    OHLCV close, RSI-14, 6 EMAs (9/12/20/21/26/50/200) plus 4 EMA-
+>    OHLCV close, RSI-14, 7 EMAs (9/12/20/21/26/50/200) plus 4 EMA-
 >    crossover states, ATR-14 plus baseline/opening-shock/day-ratio,
 >    ADX-14/+DI/-DI, Bollinger Bands (middle/upper/lower/width/squeeze),
 >    `regime` + `regime_confidence` + `regime_indicators`, nearest
