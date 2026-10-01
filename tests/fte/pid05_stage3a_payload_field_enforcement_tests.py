@@ -39,6 +39,24 @@ This delivery does not execute this suite itself (same credential/
 live-execution boundary upheld throughout PID-04/PID-05) -- Rogue runs
 it, with real credentials this script never holds or requests.
 
+*** LIVE-SEND TIMESTAMP FIX ***
+Every event built from a committed fixture (directly or via
+stage1.build_signal_state_event()/this module's build_market_fact_event())
+is passed through _restamped() before being sent, which overwrites
+produced_at_utc to the actual current governed-UTC time. Without this,
+sender.py's _gelf_timestamp_for() (correct, pre-existing, intentional
+behaviour) derives Graylog's own message timestamp from that same
+produced_at_utc -- a fixture's baked-in authoring-time value -- which
+then silently falls outside ApiClient.find_by_marker()'s 120-second
+relative-range search window. Confirmed directly against the real DEV
+stack: a restamped-free send was independently verified, via a direct
+OpenSearch query bypassing Graylog's search API entirely, to have been
+received, correctly validated (falcon_validity=VALID) and correctly
+routed -- i.e. this was purely a test-tooling search-visibility gap, not
+a live pipeline defect. Test #5 (envelope regression) is deliberately
+excluded from restamping, since it depends on produced_at_utc being
+genuinely absent.
+
 Usage:
     python3 tests/fte/pid05_stage3a_payload_field_enforcement_tests.py \\
         --gelf-host graylog-falcon --gelf-port 12411 \\
@@ -55,6 +73,7 @@ from __future__ import annotations
 import argparse
 import base64
 import copy
+import datetime as dt
 import importlib
 import json
 import sys
@@ -76,6 +95,35 @@ VALID_DIR = REPO_ROOT / "tests" / "fixtures" / "valid"
 INVALID_DIR = REPO_ROOT / "tests" / "fixtures" / "invalid"
 
 NEW_FLAG = "falcon_missing_required_payload_field"
+
+
+def _restamped(event: dict[str, Any]) -> dict[str, Any]:
+    """Returns a copy of `event` with `produced_at_utc` overwritten to the
+    actual current governed-UTC send time.
+
+    Root cause this exists to fix: stage1.build_signal_state_event() and
+    this module's own build_market_fact_event() both start from a
+    committed fixture file, whose `produced_at_utc` is a fixed value
+    baked in whenever that fixture was authored -- sender.py's
+    _gelf_timestamp_for() deliberately (and correctly, for its own
+    documented purpose) derives GELF's own message `timestamp` field from
+    that same `produced_at_utc`. Left unstamped, every live-sent FTE event
+    therefore carries a stale GELF timestamp, which silently falls outside
+    ApiClient.find_by_marker()'s 120-second relative-range search window
+    -- this showed up as every scenario in this suite reporting "never
+    indexed" even though the events were, confirmed independently via a
+    direct OpenSearch query, actually received, correctly validated and
+    correctly routed. This is a test-infrastructure gap (stale baked
+    fixture timestamp vs. a live search window), never a live Graylog
+    pipeline defect -- restamping here, at live-send time, is the correct
+    fix rather than weakening the search window or skipping verification.
+    Governed UTC only (datetime.now(timezone.utc)), matching the
+    envelope's produced_at_utc pattern; never used on test #5, which
+    deliberately removes this field to prove the pre-existing envelope
+    regression independently of this fix."""
+    restamped = copy.deepcopy(event)
+    restamped["produced_at_utc"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return restamped
 
 
 def build_market_fact_event(*, marker: str, omit_fields: tuple[str, ...] = ()) -> dict[str, Any]:
@@ -112,7 +160,7 @@ def run_all(args) -> int:
     # 1. hermes.signal_state valid (signal_natural_key present) -> VALID,
     #    and the new flag correctly absent/false.
     marker1 = uuid.uuid4().hex
-    event1 = stage1.build_signal_state_event(marker=marker1)
+    event1 = _restamped(stage1.build_signal_state_event(marker=marker1))
     stage1.send_event(event1, marker1, host="falcon-fte-pid05-stage3a", extra_fields=None, **conn)
     msg1 = api.find_by_marker(marker1)
     if msg1 is None:
@@ -126,7 +174,7 @@ def run_all(args) -> int:
     #    family's only required payload field) -> NOT VALID, quarantine,
     #    with the new flag set.
     marker2 = uuid.uuid4().hex
-    invalid_signal_event = stage1.load_fixture(INVALID_DIR / "missing_signal_natural_key.json")
+    invalid_signal_event = _restamped(stage1.load_fixture(INVALID_DIR / "missing_signal_natural_key.json"))
     stage1.send_event(invalid_signal_event, marker2, host="falcon-fte-pid05-stage3a-negative",
                        extra_fields={"_fte_send_marker": marker2}, **conn)
     msg2 = api.find_by_marker(marker2)
@@ -148,9 +196,9 @@ def run_all(args) -> int:
     #    absent -> still VALID. Optional-field regression: the new rule
     #    must never treat an optional field as required.
     marker3 = uuid.uuid4().hex
-    event3 = stage1.build_signal_state_event(
+    event3 = _restamped(stage1.build_signal_state_event(
         marker=marker3, instrument_id=None, timeframe=None, regime=None, session=None, signal_type=None,
-    )
+    ))
     stage1.send_event(event3, marker3, host="falcon-fte-pid05-stage3a-optional", extra_fields=None, **conn)
     msg3 = api.find_by_marker(marker3)
     if msg3 is None:
@@ -166,7 +214,7 @@ def run_all(args) -> int:
     #    (fact_id) -> NOT VALID, quarantine. Proves the gap-fix is
     #    universal, not HERMES/PID-05-signal_state-specific.
     marker4 = uuid.uuid4().hex
-    event4 = build_market_fact_event(marker=marker4, omit_fields=("fact_id",))
+    event4 = _restamped(build_market_fact_event(marker=marker4, omit_fields=("fact_id",)))
     stage1.send_event(event4, marker4, host="falcon-fte-pid05-stage3a-marketfact-negative",
                        extra_fields={"_fte_send_marker": marker4}, **conn)
     msg4 = api.find_by_marker(marker4)
@@ -187,7 +235,7 @@ def run_all(args) -> int:
     #     fields present) -> VALID. Proves #4's rejection is specifically
     #     about the missing field, not a blanket market_fact regression.
     marker4b = uuid.uuid4().hex
-    event4b = build_market_fact_event(marker=marker4b, omit_fields=())
+    event4b = _restamped(build_market_fact_event(marker=marker4b, omit_fields=()))
     stage1.send_event(event4b, marker4b, host="falcon-fte-pid05-stage3a-marketfact-control",
                        extra_fields={"_fte_send_marker": marker4b}, **conn)
     msg4b = api.find_by_marker(marker4b)
@@ -228,7 +276,7 @@ def run_all(args) -> int:
     #    rule -- reuses the exact spoof pattern already proven in
     #    pid05_stage1_signal_state_tests.py (and, before that, PID-04).
     marker6 = uuid.uuid4().hex
-    spoof_event = stage1.build_signal_state_event(marker=marker6)
+    spoof_event = _restamped(stage1.build_signal_state_event(marker=marker6))
     spoof_event["producer_system_id"] = "ares"
     stage1.send_event(spoof_event, marker6, host="falcon-fte-pid05-stage3a-spoof", extra_fields=None, **conn)
     msg6 = api.find_by_marker(marker6)
@@ -257,7 +305,7 @@ def run_all(args) -> int:
         "regime": "BULL_TREND", "ema_9": 3881.4, "ema_21": 3874.2,
         "note": "synthetic PID-05 Stage 3A test payload, never real HERMES data",
     }
-    event7 = stage1.build_signal_state_event(marker=marker7)
+    event7 = _restamped(stage1.build_signal_state_event(marker=marker7))
     raw_json_str = json.dumps(raw_payload, separators=(",", ":"))
     stage1.send_event(event7, marker7, host="falcon-fte-pid05-stage3a-binary",
                        extra_fields={stage1.RAW_PAYLOAD_FIELD: raw_json_str}, **conn)
