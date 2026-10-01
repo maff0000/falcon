@@ -152,8 +152,12 @@ services:
     networks:
       - falcon-net
     # Host UI/REST port: bound to the dell-debian LAN IP explicitly, never 0.0.0.0.
+    # PID-05 Stage 2: also publishes the ONE dedicated HERMES GELF TCP mTLS input
+    # (12411), same bind IP. Ports 12412-12415 (ARES/HELIOS/TRON) are deliberately
+    # NOT published - each needs its own separate authorisation.
     ports:
       - "${FALCON_GRAYLOG_HOST_BIND_IP:?FALCON_GRAYLOG_HOST_BIND_IP is required}:${FALCON_GRAYLOG_HOST_PORT:?FALCON_GRAYLOG_HOST_PORT is required}:9000"
+      - "${FALCON_GRAYLOG_HOST_BIND_IP:?FALCON_GRAYLOG_HOST_BIND_IP is required}:${FALCON_HERMES_INPUT_HOST_PORT:?FALCON_HERMES_INPUT_HOST_PORT is required}:12411"
     depends_on:
       mongodb-falcon:
         condition: service_healthy
