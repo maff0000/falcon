@@ -193,6 +193,29 @@ class TestRegistryConsistency(ContractTestBase):
                 self.assertNotIn(reserved, live)
         self.assertIn("ares.regime.nowcast", raw["reserved_not_live"])
 
+    def test_required_payload_fields_matches_schema_required(self):
+        # PID-05 Stage 3A governed invariant: event_family_registry.v1.json's
+        # required_payload_fields now drives LIVE quarantine behaviour (via
+        # deploy/generate_payload_requirements_rule.py), while each family's
+        # payload JSON Schema `required` array independently drives the
+        # offline PID-01 validator. These are two representations of the
+        # same fact and must never silently disagree -- a registry edit
+        # without updating its schema (or vice versa) must fail here, not
+        # ship as a live/offline semantic split. Order-independent
+        # (set equality): both representations declare an unordered set of
+        # mandatory field names, not a sequence.
+        for fam, entry in self.ctx.families_by_key.items():
+            registry_required = set(entry.get("required_payload_fields") or [])
+            schema_required = set(self.ctx.payload_schema_for(fam).get("required") or [])
+            with self.subTest(family=fam):
+                self.assertEqual(
+                    registry_required, schema_required,
+                    f"family '{fam}': registry required_payload_fields {sorted(registry_required)} "
+                    f"!= schema required {sorted(schema_required)} -- these two authorities have "
+                    f"drifted apart; live enforcement and offline PID-01 validation would silently "
+                    f"disagree on what this family's payload must contain",
+                )
+
 
 class TestIdentityLaw(ContractTestBase):
     def test_identical_payload_distinct_event_ids_both_legitimate(self):

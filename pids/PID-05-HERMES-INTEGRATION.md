@@ -2612,3 +2612,262 @@ surfaced but did not cause and does not fix — it is handed to the
 Architect for prioritisation, separately from Stage 1's own closure,
 and a fresh Auditor pass is expected before any Stage 1 stop-gate
 report is compiled, specifically because of this finding's significance.
+
+---
+
+# Stage 3A — live payload-level required-field enforcement (closes the MAJOR FINDING gap)
+
+**Status: real implementation, authorised by the Architect as Stage 3A,
+closing the "MAJOR FINDING" gap surfaced and deliberately left
+unpatched during Stage 1 (see the section immediately above). Built by
+the FORGE Engineer under the standard governance split for this PID:
+FORGE Engineer writes code/tests/docs only; Rogue independently
+installs and verifies against the real stack; a fresh Auditor reviews
+before closure. No live Graylog credential was held or used by the
+FORGE Engineer at any point.**
+
+## Root cause (restated precisely, for this section's own record)
+
+The live `"FALCON Ingestion"` pipeline's `"FALCON - flag missing
+required fields"` rule only ever checked 6 hardcoded **envelope**
+fields (`falcon_event_id`, `producer_system_id`, `evidence_family`,
+`evidence_type`, `produced_at_utc`, `payload_hash`). It never consulted
+any family's own `required_payload_fields` from
+`registry/event_family_registry.v1.json` at the **payload** level. This
+was not specific to `hermes.signal_state` or to HERMES — confirmed
+during Stage 1's live testing by also stripping `hermes.market_fact`'s
+`fact_id` and observing the same false-`VALID` acceptance. It predates
+this PID entirely and affected every live family (HERMES/ARES/HELIOS/
+TRON) equally.
+
+## Discovery answers (what was actually checked before writing any code)
+
+- **How the offline PID-01 validator actually enforces `required`:**
+  `tests/validator/registries.py`'s `Context.payload_schema_for()` loads
+  each family's own payload JSON Schema file
+  (`schemas/payloads/.../*.schema.json`); that schema file's own
+  `"required"` array (a standard JSON Schema keyword) is what
+  `tests/validator/schema_engine.py`'s `validate_instance()` actually
+  enforces. The offline validator's Python code never reads
+  `required_payload_fields` from the registry directly — it is
+  enforced indirectly, via the schema file. Diffed all 28 live
+  families' `required_payload_fields` against their own schema file's
+  `required` array: **byte-identical in every single case, order
+  included.** No drift was found between the registry's declared
+  requirements and the schemas that actually enforce them offline —
+  see "Critical optional-field doctrine" below for how this fact was
+  used (and not used) in the new live rule.
+- **How the live pipeline did/did not enforce this:** confirmed above
+  and in Stage 1's own "MAJOR FINDING" — it did not, for any family,
+  ever.
+- **How content packs are built:** confirmed, by searching the whole
+  repository, that `deploy/` is 100% hand-authored JSON today — no
+  generator or build step of any kind existed anywhere in this project
+  before this delivery (`find . -iname '*generat*'` matched nothing).
+  `deploy/generate_payload_requirements_rule.py` (new, this delivery)
+  is the first generator this project has ever had.
+- **Confirmation the new rule is generated, not hand-maintained:**
+  `tests/test_generated_payload_requirements_rule.py`'s
+  `test_committed_rule_source_matches_generator_output_byte_for_byte`
+  regenerates the expected rule source from the live registry at test
+  time and asserts it is byte-identical to what is actually committed
+  in the content pack — this is an enforced CI invariant, not a
+  convention anyone has to remember to uphold.
+- **Which families' live behaviour changes once this is installed:**
+  **all 28** live families now get real payload-level enforcement for
+  the first time (every family currently has at least one registered
+  `required_payload_fields` entry — see "Critical optional-field
+  doctrine" below for exactly which fields do **not** get a check).
+  Stated plainly, per the mandate's own instruction: **only
+  synthetic/fixture FTE traffic exists against this stack today** (per
+  this document's own Stage 1 live-verification section and every
+  prior PID's FTE-only testing history) — there is no real HERMES/ARES/
+  HELIOS/TRON producer traffic anywhere in this environment yet, so
+  installing this rule retroactively breaks nothing real; it only makes
+  the next synthetic/real test of an already-known-incomplete payload
+  correctly visible as `INVALID` instead of silently `VALID`.
+
+## Chosen architecture, and why it is the smallest correct fix
+
+Graylog 7.1.9's pipeline rule DSL cannot read external JSON files at
+message-processing time (confirmed independently during PID-04, and
+re-confirmed here) — there is no mechanism for a live rule to query
+the registry at runtime. Two architectures were available:
+
+1. **Hand-write `if evidence_family == "..." then require ...` directly
+   in pipeline rule source.** Rejected per the Architect's own explicit
+   instruction: this duplicates registry authority inside the content
+   pack and guarantees future drift the moment anyone edits a family's
+   `required_payload_fields` without remembering to hand-edit the
+   content pack too — exactly the failure mode this PID exists to
+   close, not reproduce.
+2. **Generate the DSL literally, ahead of time, from the registry, and
+   enforce (via a CI test) that the committed content pack is always
+   that generator's current output.** Chosen. The registry remains the
+   single source of truth; the content pack becomes a deterministic,
+   verifiable *projection* of it, not an independent copy. This is the
+   smallest correct fix available given Graylog's real constraint —
+   it does not attempt to build a general runtime schema-execution
+   engine (which the DSL could not use anyway), it only generates
+   static DSL text once per registry change.
+
+## Exact files changed / added
+
+- **`deploy/generate_payload_requirements_rule.py`** (new) — the
+  generator. `load_registry()` / `families_with_required_fields()` /
+  `generate_rule_source()` are plain, importable, pure-stdlib functions
+  (no subprocess needed by the test suite). Deterministic: iterates
+  `registry/event_family_registry.v1.json`'s own `live_families` array
+  in its own declared order (not re-sorted) — re-running against an
+  unchanged registry always produces byte-identical output, confirmed
+  directly (`test_generator_output_is_deterministic`). A family whose
+  `required_payload_fields` is empty or absent is skipped entirely — no
+  vacuous/always-false clause is ever emitted for it (confirmed by
+  `test_every_live_family_has_a_clause_iff_it_has_required_payload_fields`;
+  moot today since all 28 live families currently have at least one
+  required payload field, but the generator and its test both already
+  handle the empty case correctly for whenever that changes).
+- **`deploy/content-packs/falcon-pid03-ingestion-v1.json`** (`rev: 4 →
+  5`):
+  - New `pipeline_rule` entity `"FALCON - flag missing required
+    payload fields"`, `source` equal to the generator's current output,
+    byte for byte.
+  - Added to stage 1 of the `"FALCON Ingestion"` pipeline's own rule
+    list (same stage as every other `falcon_flag_xxx`-setting rule,
+    since it depends on the `payload_*` fields stage 0's `"FALCON -
+    Parse payload JSON"` rule produces).
+  - `"FALCON - route INVALID to Quarantine"` extended with
+    `(has_field("falcon_missing_required_payload_field") &&
+    to_bool($message.falcon_missing_required_payload_field)) ||`, same
+    pattern as every other flag already there.
+  - **All 6** `"FALCON - route valid <X> evidence"` rules
+    (TRON/HELIOS/HERMES/Operational Health/ARES/HELIOS Trade
+    Suggestions) extended identically, inside their existing `!( ...
+    )` precondition block — verified by
+    `test_flag_wired_into_quarantine_router_and_every_valid_routing_rule`
+    that none was missed (missing even one would have let that
+    producer's otherwise-invalid events through unchanged).
+  - Pipeline entity's own narrative `description` extended with one new
+    paragraph documenting this change, matching the existing convention
+    of each stage appending its own paragraph rather than rewriting
+    history.
+  - Every other existing rule's prior comparisons are byte-for-byte
+    unchanged — verified directly, not assumed, by re-running the full
+    test suite and by the diff itself (each modified rule gained
+    exactly one new disjunct line, nothing else moved).
+- **`tests/test_generated_payload_requirements_rule.py`** (new) — the
+  CI drift guard described above, plus: exactly one rule entity with
+  the expected title; the pipeline's own source references the new
+  rule by name; the flag is wired into the quarantine router and all 6
+  valid-routing rules; every live family has a clause if and only if it
+  has a non-empty `required_payload_fields`; generator determinism; the
+  content pack's `rev` was actually bumped. All offline, no live stack
+  required.
+- **`tests/fte/pid05_stage3a_payload_field_enforcement_tests.py`**
+  (new) — the live FTE proof suite, for Rogue to run; see "Tests" below.
+- **`tests/fixtures/invalid/missing_required_payload_field_market_fact.json`**
+  (new) plus its `tests/fixtures/invalid/MANIFEST.json` entry — an
+  otherwise-valid `hermes.market_fact` fixture with `payload.fact_id`
+  removed. This is a PID-01 regression/completeness pair, not a new
+  offline check: the offline validator already correctly rejects this
+  (and always has, via the schema's own `required` array) — it exists
+  here to document, for an existing family PID-05 never touched, that
+  the live/offline enforcement gap Stage 3A closes was real and
+  universal, not an artefact specific to the new `hermes.signal_state`
+  family. No existing fixture was modified.
+
+**No other file was touched.** In particular: no change to
+`registry/event_family_registry.v1.json`, any file under `schemas/`,
+`DOCUMENTATION-MANIFEST.json` (no new `.md` file was added — this
+section extends an already-declared file), or any HERMES/HELIOS/ARES/
+TRON code or configuration anywhere.
+
+## Critical optional-field doctrine — confirmed respected
+
+The new rule checks **only** the fields literally present in each
+family's own `required_payload_fields` array — nothing inferred, no
+field promoted to required because it "looks important." Concretely,
+every field below remains fully optional live, exactly as it already
+was offline, because it is genuinely absent from its family's
+`required_payload_fields`:
+
+- `hermes.signal_state`: `instrument_id`, `timeframe`, `regime`,
+  `session`, `signal_type` (only `signal_natural_key` is required).
+- `hermes.market_fact`: `value_numeric` (only `fact_id`,
+  `derivation_id`, `instrument_id`, `series_id`, `value_decimal`,
+  `unit` are required).
+- Every family's own non-required searchable/metadata fields generally
+  (e.g. `ares.*`'s various descriptive fields, `tron.*`'s non-identity
+  metadata) — the generator mechanically reads each family's own
+  `required_payload_fields` array and nothing else, so this holds for
+  all 28 families uniformly, not just the two spelled out above.
+  `test_every_live_family_has_a_clause_iff_it_has_required_payload_fields`
+  and the FTE suite's optional-field regression check (test #3) both
+  verify this behaviourally, not just by code inspection.
+
+## Confirmation no registry/schema semantics were altered
+
+All 28 live families' `required_payload_fields` were read directly from
+`registry/event_family_registry.v1.json` and diffed against their own
+schema file's `required` array (see "Discovery answers" above):
+**every single one matched exactly, order included.** Nothing looked
+factually wrong or inconsistent — there was nothing to flag or escalate.
+Neither `registry/event_family_registry.v1.json` nor any file under
+`schemas/` was modified by this delivery (the new PID-01 fixture under
+`tests/fixtures/invalid/` is an additive data file, not a change to any
+registry or schema semantics).
+
+## Tests
+
+- **Offline (this delivery, run before every commit that touches
+  tests):** `python3 -m unittest discover -s tests -p "test_*.py" -v`
+  — 34/34 pass (27 pre-existing + 7 new in
+  `tests/test_generated_payload_requirements_rule.py`), including the
+  new drift-guard class and the full pre-existing PID-01 suite
+  unchanged. `python3 -m py_compile` clean on both new Python files.
+- **Live (not executed by this delivery — Rogue's own work, same
+  credential/execution boundary as every prior round of this PID):**
+  `tests/fte/pid05_stage3a_payload_field_enforcement_tests.py`, reusing
+  `pid05_stage1_signal_state_tests.py`'s own `ApiClient`,
+  `build_signal_state_event()`, `send_event()`, and binary-field
+  field-name convention directly (imported, not re-implemented) —
+  covers: `hermes.signal_state` valid → VALID; `hermes.signal_state`
+  missing `signal_natural_key` → quarantined with the new flag set;
+  `hermes.signal_state` valid with every optional field absent → still
+  VALID (optional-field regression); `hermes.market_fact` (pre-existing
+  family) missing `fact_id` → quarantined, plus a fully-valid control
+  case for the same family; a missing-`produced_at_utc` envelope
+  regression (unaffected by the new rule); a spoofed-producer-identity
+  PID-04 regression (unaffected by the new rule); and a large-payload/
+  binary-field regression proving the new rule never evaluates or cares
+  about the `hermes_signal_raw_json`/`hermes_signal_original_payload`
+  mechanism. **Self-tested locally before hand-off, no network**
+  (matching this project's established discipline): imported the
+  module directly and exercised every pure-local code path —
+  `build_market_fact_event()` correctly includes/excludes `fact_id`;
+  the reused `build_signal_state_event()` optional-omission behaviour
+  re-verified; envelope-field deletion verified; `sender.
+  build_gelf_message()` flattening re-verified for both event shapes.
+  `--stream-name`/`--quarantine-stream-name` both default to the real
+  production stream names but neither is hardcoded internally — per
+  this PID's own established isolated-test-first convention, Rogue
+  should run this first against an isolated test setup before ever
+  pointing it at the real `falcon-evidence_0` index.
+
+## Live install note (Rogue's own work, not executed by this delivery)
+
+Per the existing precedent already documented above (Stage 1's
+"Content-pack / pipeline changes" section) and in
+`docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md` step 2:
+because rev 5 *modifies* 7 existing rules' source (the quarantine router
+plus all 6 valid-routing rules) and the pipeline entity's own stage
+list, installing it over an already-installed rev 4 will hit
+`DivergingEntityConfigurationException` unless those 7 rules plus the
+pipeline entity are deleted first, then the pack reinstalled — the same
+already-proven procedure applies here unchanged. Expected stage
+structure after install: stage 0 unchanged (4 rules), **stage 1 grows
+from 18 to 19 rules** (the new rule), stage 2 unchanged (7 rules, each
+with one new disjunct). As with every prior round, Rogue should test
+against a fresh isolated index/stream/pipeline set first, confirm no
+IRIS impact, and only then proceed to the real `falcon-evidence_0`
+stack.
