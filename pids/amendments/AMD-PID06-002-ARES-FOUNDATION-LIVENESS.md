@@ -11,7 +11,7 @@ existing mechanism in `runtime/foundation.py`, `runtime/health.py`, `runtime/sch
 in-container healthcheck process without new application functionality. That finding is accepted as
 correct; this amendment authorises the narrow new functionality required to resolve it.
 **Status:** ACCEPTED — architecture/governance only. No implementation authorised by this document alone;
-implementation requires the amended Work Order (§7 below) to itself be accepted and merged.
+implementation requires the amended Work Order (§13 below) to itself be accepted and merged.
 **Authority:** Central Architecture, via explicit instruction to the Delivery Controller (Rogue): "ROGUE —
 DELIVERY CONTROLLER / PID-06 — FALCON Merge + ARES Foundation Liveness Amendment."
 
