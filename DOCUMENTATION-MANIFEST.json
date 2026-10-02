@@ -1,5 +1,5 @@
 {
-  "file_count": 52,
+  "file_count": 53,
   "paths": [
     "README.md",
     "config/README.md",
@@ -52,6 +52,7 @@
     "pids/PID-15-MVP-CLOSURE.md",
     "registry/README.md",
     "schemas/README.md",
-    "tests/README.md"
+    "tests/README.md",
+    "work-orders/WO-PID06-002-RUNTIME-ACCEPTANCE.md"
   ]
 }
