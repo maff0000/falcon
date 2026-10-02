@@ -1,6 +1,35 @@
 # Work Order: WO-PID06-002-RUNTIME-ACCEPTANCE
 
-**Status:** DRAFT — awaiting Central Architecture acceptance. **NOT authorised for execution.**
+**Status:** ACCEPTED — Central Architecture has reviewed and accepted this Work Order as durable project
+authority, and has authorised dispatch of bounded Implementer mandates against it (see Acceptance record
+below). This status supersedes the original "DRAFT — NOT authorised for execution" line this document
+carried at merge time (PR #13, `d4ec1b3bf831829b84c2ad9deb886544f745444b`, merged as
+`c9002a90e388484ef4d4b0affea7d771e2b7233c`) — that line was accurate at the time it was written and is
+retained in this file's Git history, not rewritten, per this project's own discipline against silently
+erasing prior state. Acceptance of this WO authorises dispatching Implementer mandates against its exact
+scope; it does not itself authorise merging any resulting candidate, deploying anything, or starting
+PID-07 — each of those remains independently gated exactly as this WO's own §18-21 and §24 already specify.
+
+## Acceptance record
+
+- **Accepted by:** Central Architecture (the Architect authority for this project), via explicit instruction
+  to the Delivery Controller (Rogue).
+- **Accepted:** "ROGUE — DELIVERY CONTROLLER / PID-06 — Merge Accepted Runtime Acceptance Work Order" —
+  "Central Architecture has reviewed and **ACCEPTED**: `WO-PID06-002-RUNTIME-ACCEPTANCE`" (authorising the
+  merge of PR #13, carried out and verified — merge SHA `c9002a90e388484ef4d4b0affea7d771e2b7233c`, parent 2
+  `d4ec1b3bf831829b84c2ad9deb886544f745444b`, confirmed present on canonical `main`).
+- **Dispatch authorised:** "ROGUE — DELIVERY CONTROLLER / PID-06 — Dispatch Runtime Configuration
+  Implementation / WO-PID06-002-RUNTIME-ACCEPTANCE" — "Central Architecture accepts the Work Order as
+  durable authority... Dispatch: FORGE — IMPLEMENTER against `WO-PID06-002-RUNTIME-ACCEPTANCE`", scoped
+  explicitly to the durable, non-secret configuration items in §5 FALCON item 1-2 / ARES item 7-8, with
+  HELM's own subsequent runtime-mutation mandate explicitly withheld pending separate authorisation.
+- **This correction's own authority:** this status update is itself a Delivery-Controller-level durable-record
+  correction (not new architecture, not implementation against the WO's technical scope) — making the
+  already-given, already-acted-upon Architect acceptance visible in Git, per this WO's own §19 requirement
+  that Architect acceptance of the WO itself precede any implementer dispatch, and per the project's own
+  "no Git record → not durable project authority" rule. It was prompted by a FORGE Implementer correctly
+  refusing to proceed against the stale DRAFT/NOT-AUTHORISED line still present in Git at dispatch time —
+  exactly the STOP-on-ambiguity discipline this WO requires, working as intended.
 
 ## 1. Governance chain (binding on every mandate derived from this WO)
 
@@ -25,10 +54,14 @@ The Architect owns architecture, PIDs, amendments, sequencing, and acceptance. T
 
 ## 3. Exact base SHAs (binding)
 
-- **FALCON canonical base:** `d4644f548de98e5371e8519b391fde422157ce54` (`maff0000/falcon`, main)
+- **FALCON canonical base:** `c9002a90e388484ef4d4b0affea7d771e2b7233c` (`maff0000/falcon`, main) — updated
+  from the original `d4644f548de98e5371e8519b391fde422157ce54` recorded when this WO was first drafted;
+  the Delivery Controller has determined this advance is safe: the only commit in between is `d4ec1b3`
+  (merged as `c9002a9` via PR #13), which is this WO document and its parent PID correction themselves —
+  a documentation-only, self-referential advance that touches nothing this WO's technical scope depends on.
 - **ARES canonical base:** `2525455669ca068fcf5b17592b3d4a9f28ee2185` (`maff0000/trading-ares`, main)
 
-If either canonical `main` moves before this WO is executed, the Delivery Controller must determine whether updating the WO's recorded base SHA is safe (i.e. the move is unrelated/additive and does not touch anything this WO depends on) before proceeding, and must record that determination in Git. **Do not silently implement against an unapproved replacement base.**
+If either canonical `main` moves again before this WO is fully executed, the Delivery Controller must determine whether updating the WO's recorded base SHA is safe (i.e. the move is unrelated/additive and does not touch anything this WO depends on) before proceeding, and must record that determination in Git exactly as above. **Do not silently implement against an unapproved replacement base.**
 
 ## 4. Objective
 
@@ -42,7 +75,7 @@ The smallest set of runtime/configuration changes required to prove the above:
 1. Expose FALCON's existing dedicated ARES GELF/mTLS input on host port `12412`, mirroring the already-proven HERMES `12411` model exactly (same Docker publish pattern, same bind-to-LAN-IP-not-`0.0.0.0` discipline, same no-general-bridge discipline).
 2. Add the required governed environment/configuration entry for this exposure.
 3. Provision/update FALCON-side trust material for the newly generated ARES client identity (§7).
-4. Build/deploy from canonical merged FALCON main (`d4644f548de98e5371e8519b391fde422157ce54`) only.
+4. Build/deploy from canonical merged FALCON main (`c9002a90e388484ef4d4b0affea7d771e2b7233c`, per §3) only.
 5. Recreate only the minimum necessary FALCON component (expected: `graylog-falcon`, following the exact same minimal-recreate discipline already proven across every prior PID-05 deployment stage).
 
 ### ARES
@@ -187,3 +220,32 @@ PID-07 is explicitly not authorised by this WO and must not be started, referenc
 ## 25. Explicit exclusions (reaffirmed from PID-06 itself, binding on this WO specifically)
 
 This WO does not authorise, and any mandate derived from it must not perform: PID-07 (see §24); Calendar, Liquidity, Macro-USD, or source-quality evidence publication; any `publication.decision` family redesign; source-quality SQL persistence work; remediation of the pre-existing, unrelated macro_usd HERMES-identity-fingerprint issue; general FALCON OpenSearch authentication remediation; Mongo credential rotation; any HERMES, HELIOS, or TRON code change; general Docker/network redesign beyond the single narrow ARES↔FALCON:12412 path described in §8; any `tar-risk-engine` repair or investigation.
+
+## 26. Open architectural finding — ARES canonical deployment topology (recorded, not resolved by this WO)
+
+Execution of this WO's §5 ARES items 7-10 surfaced a real architectural gap, STOPPED on rather than
+improvised past, per §23: the canonical, Git-tracked, CI-hardened ARES deployment
+(`docker/docker-compose.ares.yaml` + `docker/Dockerfile.live`, `maff0000/trading-ares`) defines exactly
+three services — `ares-db`, `ares-cache`, `ares-core` — and `ares-core`'s image `CMD` is exactly
+`python -m runtime.compose_root`. **No service anywhere in the canonical deployment runs
+`runtime.foundation`** — the module hosting the market-status scheduler job (`JOB_MARKET_STATUS`) and the
+now-merged Stage 2B evidence-publisher wiring (`_publish_market_status_evidence`). Confirmed exhaustively:
+no second Dockerfile, no entrypoint/supervisor script bundling both processes, no other compose file in the
+repository references `foundation` at all. The `ares-foundation` container that actually executes this code
+today exists only in the disposable Stage-1-era worktree deployment path (`/srv-dev-worktrees/trading-ares`)
+this WO explicitly intends to retire dependence on (§10).
+
+**Consequence**: adding the evidence-publisher's runtime configuration to `ares-core`'s environment (this
+WO's §5 item 7 as originally scoped) would be inert in the canonical deployment — nothing in that topology
+would ever read or act on it, since the process that needs it is not part of the canonical service set.
+Making the merged Stage 2B capability real on the canonical deployment path requires adding a new service
+to `docker/docker-compose.ares.yaml` (image/CMD reference, healthcheck, any required secrets/volume wiring)
+— a materially broader deployment change than "durable, non-secret configuration," and therefore outside
+this WO's own §5/§23 narrow-scope boundary as drafted.
+
+**Disposition**: not resolved here. Returned to Central Architecture for a ruling on one of: (a) amend this
+WO (or issue a successor WO) to explicitly authorise adding an `ares-foundation`-equivalent service to the
+canonical ARES compose; (b) direct that `ares-core`'s own process should instead absorb the P0 scheduler
+jobs (a different, and likely larger, architectural change to `runtime.compose_root` itself); (c) some other
+resolution Central Architecture prefers. No ARES-side implementation has been dispatched or performed
+pending this ruling.
