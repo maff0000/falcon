@@ -2,32 +2,37 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://falcon.thegoal.internal/schemas/payloads/ares/market_status_session_state.v1.schema.json",
   "title": "FalconEvent payload: ares.market_status.session_state (v1)",
-  "description": "Typed payload schema for registered FALCON event family 'ares.market_status.session_state'.",
+  "description": "Typed payload schema for registered FALCON event family 'ares.market_status.session_state'. PID-06 Stage 2A/2B contract reconciliation: replaces the speculative, pre-discovery 5-value session-lifecycle model (session_id/market_id/session_state, never produced by any real ARES code) with ARES's real, authoritative market_state observation (OPEN|CLOSED|UNKNOWN) plus its orthogonal reason_code.",
   "type": "object",
   "properties": {
-    "session_id": {
+    "instrument_id": {
       "type": "string",
       "minLength": 1
     },
-    "market_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "session_state": {
+    "market_state": {
       "type": "string",
       "enum": [
-        "PRE_OPEN",
         "OPEN",
-        "CLOSING",
         "CLOSED",
-        "HOLIDAY"
+        "UNKNOWN"
+      ]
+    },
+    "reason_code": {
+      "type": "string",
+      "enum": [
+        "SESSION_OPEN",
+        "EARLY_CLOSE_SESSION",
+        "MARKET_CLOSED_WEEKEND",
+        "MARKET_CLOSED_HOLIDAY",
+        "MARKET_CLOSED_SESSION_BREAK",
+        "SCHEDULE_COVERAGE_MISSING",
+        "EVALUATION_FAILED"
       ]
     }
   },
   "required": [
-    "session_id",
-    "market_id",
-    "session_state"
+    "instrument_id",
+    "market_state"
   ],
   "additionalProperties": false
 }

@@ -87,9 +87,8 @@
       ],
       "schema_file": "payloads/ares/market_status_session_state.v1.schema.json",
       "required_payload_fields": [
-        "session_id",
-        "market_id",
-        "session_state"
+        "instrument_id",
+        "market_state"
       ]
     },
     {

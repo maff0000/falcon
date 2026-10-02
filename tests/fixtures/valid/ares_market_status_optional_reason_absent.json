@@ -1,5 +1,5 @@
 {
-  "falcon_event_id": "00000007-0000-4000-8000-000000000007",
+  "falcon_event_id": "00000007-0000-4000-8000-000000000008",
   "envelope_version": "v1",
   "payload_schema_version": "v1",
   "producer_system_id": "ares",
@@ -7,22 +7,21 @@
   "evidence_family": "ares.market_status.session_state",
   "evidence_type": "fx_session_state",
   "evidence_class": "STATE_SNAPSHOT",
-  "produced_at_utc": "2026-10-01T15:00:30Z",
-  "falcon_ingested_at_utc": "2026-10-01T15:00:30Z",
+  "produced_at_utc": "2026-10-01T18:49:36Z",
+  "falcon_ingested_at_utc": "2026-10-01T18:49:36Z",
   "subject_id": "XAU_USD",
   "instrument_ids": [
     "XAU_USD"
   ],
   "provenance_ref": {
     "producer_system_id": "ares",
-    "upstream_ref": "ares:market-status:XAU_USD:2026-10-01T15:00:30.125264Z"
+    "upstream_ref": "ares:market-status:XAU_USD:2026-10-01T18:49:36.390211Z"
   },
-  "payload_hash": "sha256:816f807cb83a1dfd7c22607963c8b6909d5be1dc953a657a430480099762efa5",
+  "payload_hash": "sha256:d858808132590fddbc8d1edcb11607b85bae8f2d9aa8ce1bd8892aa1143bd245",
   "retention_class": "standard",
   "sensitivity_class": "internal",
   "payload": {
     "instrument_id": "XAU_USD",
-    "market_state": "OPEN",
-    "reason_code": "SESSION_OPEN"
+    "market_state": "UNKNOWN"
   }
 }

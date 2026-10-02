@@ -636,7 +636,8 @@
         "tron.order_submitted",
         "tron.position_state",
         "tron.trigger_observed",
-        "hermes.signal_state"
+        "hermes.signal_state",
+        "ares.market_status.session_state"
       ],
       "required_default": null,
       "enum": null,
@@ -1507,58 +1508,45 @@
       "superseded_by": null
     },
     {
-      "name": "session_id",
+      "name": "market_state",
       "type": "string",
-      "description": "ARES market-session identity.",
-      "scope": "payload",
-      "allowed_families": [
-        "ares.market_status.session_state"
-      ],
-      "required_default": null,
-      "enum": null,
-      "pattern": null,
-      "unit_precision": null,
-      "authoritative_producer": "ares",
-      "retention_class": "standard",
-      "sensitivity_class": "internal",
-      "version_introduced": "v1",
-      "deprecated": false,
-      "superseded_by": null
-    },
-    {
-      "name": "market_id",
-      "type": "string",
-      "description": "Market/segment this session state concerns.",
-      "scope": "payload",
-      "allowed_families": [
-        "ares.market_status.session_state"
-      ],
-      "required_default": null,
-      "enum": null,
-      "pattern": null,
-      "unit_precision": null,
-      "authoritative_producer": "ares",
-      "retention_class": "standard",
-      "sensitivity_class": "internal",
-      "version_introduced": "v1",
-      "deprecated": false,
-      "superseded_by": null
-    },
-    {
-      "name": "session_state",
-      "type": "string",
-      "description": "Trading session lifecycle state.",
+      "description": "ARES's real, authoritative, deterministic market-state observation (ares.marketstatus.model.MARKET_STATES: OPEN|CLOSED|UNKNOWN). ARES deliberately fails safe to UNKNOWN whenever market truth cannot be established (missing schedule coverage, evaluation exception, stale prior observation) -- UNKNOWN must never be collapsed into CLOSED, and no transitional/predictive state (e.g. a 'PRE_OPEN'/'CLOSING' phase) exists in or should be inferred for the real producer. Replaces the speculative, pre-discovery 'session_state' field (5-value enum, never produced by any real ARES code) retired in PID-06 Stage 2A/2B contract reconciliation.",
       "scope": "payload",
       "allowed_families": [
         "ares.market_status.session_state"
       ],
       "required_default": null,
       "enum": [
-        "PRE_OPEN",
         "OPEN",
-        "CLOSING",
         "CLOSED",
-        "HOLIDAY"
+        "UNKNOWN"
+      ],
+      "pattern": null,
+      "unit_precision": null,
+      "authoritative_producer": "ares",
+      "retention_class": "standard",
+      "sensitivity_class": "internal",
+      "version_introduced": "v1",
+      "deprecated": false,
+      "superseded_by": null
+    },
+    {
+      "name": "reason_code",
+      "type": "string",
+      "description": "ARES's real, orthogonal reason/context code for the current market_state observation (ares.marketstatus.model REASON_* constants). Orthogonal to market_state -- never used to derive or override it, never required, never fabricated when the real producer object does not carry one. Preserved exactly as ARES emits it.",
+      "scope": "payload",
+      "allowed_families": [
+        "ares.market_status.session_state"
+      ],
+      "required_default": false,
+      "enum": [
+        "SESSION_OPEN",
+        "EARLY_CLOSE_SESSION",
+        "MARKET_CLOSED_WEEKEND",
+        "MARKET_CLOSED_HOLIDAY",
+        "MARKET_CLOSED_SESSION_BREAK",
+        "SCHEDULE_COVERAGE_MISSING",
+        "EVALUATION_FAILED"
       ],
       "pattern": null,
       "unit_precision": null,
