@@ -249,3 +249,57 @@ canonical ARES compose; (b) direct that `ares-core`'s own process should instead
 jobs (a different, and likely larger, architectural change to `runtime.compose_root` itself); (c) some other
 resolution Central Architecture prefers. No ARES-side implementation has been dispatched or performed
 pending this ruling.
+
+## 27. §26 resolution — ARES Foundation canonicalisation (AMD-PID06-001)
+
+Central Architecture has reviewed the read-only topology discovery referenced in §26 and issued a binding
+architecture decision, recorded in full at `pids/amendments/AMD-PID06-001-ARES-FOUNDATION-CANONICAL-SERVICE.md`.
+**§26 is resolved, not left open**, as follows:
+
+ARES has two distinct canonical application process roles — `ares-core` (`python -m runtime.compose_root`)
+and `ares-foundation` (`python -m runtime.foundation`). `ares-foundation` shall become an explicit, canonical,
+Git-governed service in ARES's Docker Compose deployment, using the same application image as `ares-core`
+with a different command, preserving full process separation (no absorption of Foundation into Core, no
+shared-container supervisor). This formalises the process architecture already present in ARES's code and
+already proven in the live environment; it does not create a FALCON-specific ARES process — Foundation's P0
+scheduling responsibilities (Calendar, Market Status, Liquidity, Macro/USD) exist and are required
+independently of FALCON.
+
+This Work Order's scope is hereby amended: **§5 ARES item 9's "expected: `ares-foundation`" is confirmed**,
+and is now explicitly understood to mean *canonicalising* `ares-foundation` as a new compose service — not
+merely redeploying an already-canonical one. Once this amended Work Order itself has been independently
+reviewed, Architect-accepted, and merged, FORGE is authorised to make the smallest tracked ARES deployment
+change required to:
+
+1. add canonical `ares-foundation` to `docker/docker-compose.ares.yaml`;
+2. use the existing ARES application image (no second image);
+3. run `python -m runtime.foundation` as its command;
+4. provide the correct existing config/secret mounts (mirroring `ares-core`'s pattern);
+5. configure the existing Foundation activation mechanism (`ARES_FOUNDATION_RUNTIME_ENABLED`), explicitly
+   set, no hidden default;
+6. add appropriate existing-style hardening (non-root user, read-only rootfs, capability drop,
+   `no-new-privileges`, `ares-net` only, consistent restart policy) — correcting the existing manual
+   container's missing `no-new-privileges` as deployment drift, not preserving it;
+7. add the smallest truthful healthcheck, derived from existing ARES health facilities / Foundation's own
+   heartbeat/job-health mechanisms only — if no existing mechanism can truthfully establish Foundation
+   readiness/liveness without new application functionality, STOP → CENTRAL ARCHITECTURE rather than
+   inventing one;
+8. provide the Stage 2B FALCON evidence-publisher configuration (§5 item 7 of this WO) to the canonical
+   `ares-foundation` service, where it is live rather than inert;
+9. remove dependence on the manually-created Foundation runtime during the eventual HELM deployment covered
+   by this WO's §9/§10 (the existing manual `ares-foundation` container itself remains untouched by this
+   amendment and by any Delivery-Controller-level mandate — its retirement is a HELM-authorised runtime
+   mutation, separately gated exactly as this WO's §9 already requires);
+10. preserve `ares-core` as a fully separate process — no merged lifecycle, no shared supervisor.
+
+AMD-PID06-001's binding constraints (§3–§16 of that document) govern this implementation exactly as if
+reproduced here: shared image/separate command; no absorption into `compose_root`; no FALCON startup
+dependency; Findings A and B remain open and must not be opportunistically fixed; no change to existing P0
+job business semantics, cadence, or enablement rules; canonical source only
+(`maff0000/trading-ares`, never `/srv-dev-worktrees/trading-ares` or a manual `docker run`); UTC protocol
+unchanged; the same explicit exclusions reaffirmed (no PID-07, no Calendar/Liquidity/Macro-USD/source-quality
+publication, no `publication.decision` redesign, no HERMES/HELIOS/TRON/`tar-risk-engine` change).
+
+This section is itself documentation/governance only. It does not dispatch FORGE or HELM, and does not
+authorise any implementation until this amended Work Order has itself passed independent audit, PR, and
+Architect acceptance, per §1's governance chain.

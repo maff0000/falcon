@@ -148,6 +148,17 @@ Stage-1-era worktree deployment path), and live, evidence-backed runtime
 proof of the full HERMES-pattern non-blocking failure-isolation guarantee
 under real network conditions.
 
+## Amendments
+
+- **AMD-PID06-001 — ARES Foundation Canonical Service** (`pids/amendments/AMD-PID06-001-ARES-FOUNDATION-CANONICAL-SERVICE.md`).
+  Resolves the Stage 3 / WO-PID06-002 §26 open architectural finding: ARES has two distinct canonical
+  process roles (`ares-core` running `runtime.compose_root`; `ares-foundation` running
+  `runtime.foundation`, the sole scheduler for Calendar/Market Status/Liquidity/Macro-USD and Foundation
+  housekeeping, required independently of FALCON). `ares-foundation` is to become an explicit,
+  Git-governed Compose service using the same image with a different command, with process separation from
+  `ares-core` preserved. Architecture/governance only — implementation requires the amended
+  `WO-PID06-002-RUNTIME-ACCEPTANCE` (§27) to itself be accepted and merged.
+
 ## Explicit scope boundaries (reaffirmed, apply to every future PID-06 stage)
 
 Not authorised under PID-06 without a fresh amendment: Calendar, Liquidity,
