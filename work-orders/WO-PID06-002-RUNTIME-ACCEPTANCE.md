@@ -303,3 +303,44 @@ publication, no `publication.decision` redesign, no HERMES/HELIOS/TRON/`tar-risk
 This section is itself documentation/governance only. It does not dispatch FORGE or HELM, and does not
 authorise any implementation until this amended Work Order has itself passed independent audit, PR, and
 Architect acceptance, per §1's governance chain.
+
+## 28. Foundation healthcheck — AMD-PID06-002 supersedes §27 item 7
+
+Attempted implementation of §27 item 7 (the canonical `ares-foundation` healthcheck) correctly hit a STOP:
+no existing ARES mechanism (`runtime/health.py`, in-memory scheduler/heartbeat state, heartbeat log lines,
+or the `ares:v1:health:summary` Redis surface) can truthfully establish Foundation liveness from a fresh
+in-container healthcheck process without new application functionality — and `AMD-PID06-001` §10 required
+an existing mechanism only. Central Architecture has reviewed this finding and ruled that the narrow new
+functionality required is authorised, under a dedicated amendment:
+`pids/amendments/AMD-PID06-002-ARES-FOUNDATION-LIVENESS.md`.
+
+**§27 item 7 is superseded exactly as follows**: wherever §27 required "the smallest truthful *existing*
+mechanism," it now additionally permits — and AMD-PID06-002 binds the specifics of — the smallest *new*
+local liveness-marker mechanism described there, extending the existing `JOB_HEARTBEAT` progress signal
+(`clients._last_heartbeat_utc`) to a container-external, Docker-probeable file, read by a small local,
+dependency-free healthcheck command. No other item of §27, and no other provision of AMD-PID06-001, is
+affected by this supersession.
+
+Once this amended Work Order is itself independently audited, Architect-accepted, and merged, FORGE is
+authorised to implement, strictly per AMD-PID06-002:
+
+1. the minimal local liveness-marker writer, integrated into Foundation's existing `_heartbeat_job()` path
+   (no second heartbeat thread);
+2. the minimal local liveness reader/CLI (no network/SQL/Redis/HERMES/FALCON/Graylog calls);
+3. a staleness threshold deterministically derived from `sched_config.heartbeat_interval_s`, documented and
+   tested — not a hardcoded constant;
+4. deterministic unit/component tests covering: fresh marker → healthy; missing marker → unhealthy;
+   malformed marker → unhealthy; stale marker → unhealthy; valid UTC parsing; future-invalid marker →
+   unhealthy; heartbeat progress updates the marker; stopped progress eventually yields stale state;
+   dependency failure (Redis/SQL/HERMES/FALCON) does not directly control local liveness; startup does not
+   report healthy before genuine first heartbeat progress — using deterministic clock injection, not
+   sleep-heavy wall-clock tests;
+5. the canonical Compose `healthcheck:` block for `ares-foundation` invoking this local reader, with a
+   `start_period` sized to legitimate Foundation initialisation.
+
+Nothing broader than this list, and nothing in AMD-PID06-001's other provisions (process separation, no
+FALCON startup dependency, canonical source, existing P0 job semantics), is reopened by this section.
+
+This section is itself documentation/governance only. It does not dispatch FORGE or HELM, and does not
+authorise any implementation until this amended Work Order has itself passed independent audit, PR, and
+Architect acceptance, per §1's governance chain.

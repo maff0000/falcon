@@ -113,6 +113,14 @@ canonicalisation — it is not preserved merely because the manual container cur
 
 ## 10. Healthcheck (binding)
 
+> **Superseded narrowly by `AMD-PID06-002-ARES-FOUNDATION-LIVENESS.md`**: implementation of this section
+> hit exactly the STOP condition it describes below (no existing mechanism could truthfully establish
+> Foundation readiness/liveness). Central Architecture reviewed that finding and authorised the minimum new
+> liveness-marker functionality required, under AMD-PID06-002. The "existing mechanism only" constraint
+> immediately below is retained here as the original record of what was decided at the time; AMD-PID06-002
+> is the controlling decision for actual implementation. No other provision of this document is affected.
+
+
 The canonical `ares-foundation` service must have a meaningful healthcheck. `ares-core`'s readiness probe
 must not be blindly copied if it does not prove Foundation health. Before implementing the healthcheck, the
 Implementer must inspect existing ARES health facilities and Foundation's own heartbeat/job-health
