@@ -1,5 +1,5 @@
 {
-  "file_count": 53,
+  "file_count": 54,
   "paths": [
     "README.md",
     "config/README.md",
@@ -50,6 +50,7 @@
     "pids/PID-13-OBSERVABILITY-CAPACITY.md",
     "pids/PID-14-PROD-ENGINEERING.md",
     "pids/PID-15-MVP-CLOSURE.md",
+    "pids/amendments/AMD-PID06-001-ARES-FOUNDATION-CANONICAL-SERVICE.md",
     "registry/README.md",
     "schemas/README.md",
     "tests/README.md",
