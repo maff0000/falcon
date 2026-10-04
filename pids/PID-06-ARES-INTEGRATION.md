@@ -159,6 +159,14 @@ under real network conditions.
   `ares-core` preserved. Architecture/governance only — implementation requires the amended
   `WO-PID06-002-RUNTIME-ACCEPTANCE` (§27) to itself be accepted and merged.
 
+- **AMD-PID06-002 — ARES Foundation Liveness** (`pids/amendments/AMD-PID06-002-ARES-FOUNDATION-LIVENESS.md`).
+  Narrowly supersedes AMD-PID06-001's healthcheck constraint only: authorises the minimum new local
+  liveness-marker/reader functionality needed for a truthful `ares-foundation` Docker healthcheck, extending
+  the existing `JOB_HEARTBEAT` progress signal rather than depending on SQL/Redis/HERMES/FALCON. Liveness
+  only, not dependency readiness; no restart/watchdog automation authorised. Architecture/governance only —
+  implementation requires the amended `WO-PID06-002-RUNTIME-ACCEPTANCE` (§28) to itself be accepted and
+  merged.
+
 ## Explicit scope boundaries (reaffirmed, apply to every future PID-06 stage)
 
 Not authorised under PID-06 without a fresh amendment: Calendar, Liquidity,
