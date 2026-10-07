@@ -1,5 +1,5 @@
 {
-  "file_count": 57,
+  "file_count": 59,
   "paths": [
     "README.md",
     "config/README.md",
@@ -8,6 +8,7 @@
     "docs/architecture/01-FALCON-ARCHITECTURE.md",
     "docs/architecture/02-AUTHORITY-BOUNDARIES.md",
     "docs/architecture/04-PRODUCER-CONTRACT-EVOLUTION-DOCTRINE.md",
+    "docs/architecture/PID07-HELIOS-STAGE1-DISCOVERY.md",
     "docs/contracts/ARES-FALCON-CONTRACT.md",
     "docs/contracts/FALCON-EVENT-FAMILY-REGISTRY.md",
     "docs/contracts/FALCON-FIELD-REGISTRY.md",
@@ -57,6 +58,7 @@
     "registry/README.md",
     "schemas/README.md",
     "tests/README.md",
-    "work-orders/WO-PID06-002-RUNTIME-ACCEPTANCE.md"
+    "work-orders/WO-PID06-002-RUNTIME-ACCEPTANCE.md",
+    "work-orders/WO-PID07-001-HELIOS-DISCOVERY.md"
   ]
 }
