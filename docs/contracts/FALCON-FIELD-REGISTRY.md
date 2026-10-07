@@ -2,8 +2,11 @@
 
 ## Law
 
-The registry is the single authority for FALCON-visible field names and
-types. Producers may not create arbitrary dynamic fields or synonyms.
+The registry is the single authority for FALCON-visible (searchable, Layer A) field names and types.
+Producers may not create arbitrary dynamic SEARCHABLE fields or synonyms. This law governs the deliberately
+promoted searchable envelope/payload fields only --- it does not restrict the content of a producer's own
+raw-preservation evidence (see `docs/architecture/04-PRODUCER-CONTRACT-EVOLUTION-DOCTRINE.md`), which remains
+producer-owned, extensible, and opaque to this registry unless a field is deliberately promoted into it.
 
 Each registered field records: - canonical name; - data type; - semantic
 definition; - required/optional; - allowed event families; - enum

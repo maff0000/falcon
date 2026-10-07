@@ -117,3 +117,22 @@
     Architect -- not mandatory/default assurance for routine PID
     closure. Decision 4's original text is preserved above, unedited,
     as the historical record of what was originally decided.
+
+32. **Producer Contract Evolution Doctrine** (Architect ruling, following PID-05 HERMES and PID-06
+    ARES integration experience): the FALCON envelope is stable and searchable; producer-owned
+    evidence is extensible. FALCON owns the transport boundary, authenticated producer identity,
+    universal event identity, classification, governed UTC timestamps, the stable searchable
+    envelope, evidence preservation, and Graylog routing/searchability. FALCON does not own the
+    detailed meaning or internal structure of producer-specific evidence. Adding a producer-owned
+    payload field does not, by itself, require a FALCON contract revision; searchable-field
+    promotion remains a deliberate, governed architectural decision, not automatic; FALCON must not
+    recursively promote arbitrary producer JSON into the searchable envelope. Lossless
+    producer-owned payload preservation is required; no particular encoding format (e.g.
+    binary/base64) is intrinsically required where JSON string preservation demonstrably preserves
+    the evidence (reaffirms the PID-06 lossless-payload ruling). No hindsight enrichment; no
+    rewriting of historical evidence. Full doctrine, including the two-layer event model and its
+    existing proven realisation (per-family searchable `payload` schema plus a separate
+    producer-owned raw-preservation field), the HELIOS-specific non-freezing ruling for any future
+    PID-07, and the forward-compatibility acceptance invariant for future implementation/testing:
+    `docs/architecture/04-PRODUCER-CONTRACT-EVOLUTION-DOCTRINE.md`. This decision does not reopen or
+    amend PID-01's closed registries/schemas.
