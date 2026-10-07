@@ -1,5 +1,5 @@
 {
-  "file_count": 55,
+  "file_count": 56,
   "paths": [
     "README.md",
     "config/README.md",
@@ -31,6 +31,7 @@
     "docs/operations/FALCON-OBSERVABILITY.md",
     "docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md",
     "docs/operations/FALCON-PID05-STAGE1-HELM-HANDOVER-BRIEF.md",
+    "docs/operations/FALCON-PID06-RUNTIME-ACCEPTANCE-EVIDENCE.md",
     "docs/security/FALCON-HELIOS-TRIGGER-SIGNING.md",
     "docs/security/FALCON-PRODUCER-AUTHENTICATION.md",
     "docs/security/FALCON-SECURITY-MODEL.md",
