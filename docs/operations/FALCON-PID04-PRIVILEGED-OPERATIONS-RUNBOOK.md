@@ -632,3 +632,57 @@ fix, not a defect.
   step already removed it).
 - The `pid04` suite's full result against the rev-3 ids.
 - IRIS unaffected, confirmed once more at this final checkpoint.
+
+## 14. Rev 6 — PID-06 content-pack reconciliation (diverging-rule correction)
+
+**This section is the current, authoritative procedure for reconciling a live pipeline rule against a newer
+content-pack revision — supersedes any prior assumption that deleting only the diverging rule is
+sufficient.** Context: installing content-pack rev 6 (PID-06's `market_status` contract correction, FALCON
+PR #12) live required reconciling an already-live, already-diverged pipeline rule generated from an earlier
+revision. A first, narrower attempt — delete only the diverging rule, then reinstall — failed safely:
+Graylog rejected the reinstall because the pipeline *entity* itself (title `FALCON Ingestion`) still existed
+live, producing a duplicate-pipeline-title conflict. The rollback restored the original rule byte-identically
+with no evidence loss. **The documentation that said "delete the diverging rule" alone was operationally
+incomplete; this section corrects it.**
+
+### 14.1 Proven procedure
+
+1. Delete the diverging rule entity live (as the narrow attempt already did).
+2. **Also delete the pipeline entity itself** (title `FALCON Ingestion`), not merely the rule inside it. A
+   content-pack reinstall creates a new pipeline entity; it cannot reconcile against one with the same title
+   already present.
+3. Reinstall the canonical content pack at the target revision from
+   `deploy/content-packs/falcon-pid03-ingestion-v1.json` (same `PACK_ID`/install mechanism as §2/§11/§13 —
+   `POST /api/system/content_packs/${PACK_ID}/<rev>/installations`).
+4. Reconnect the reinstalled pipeline to the Default Stream — a fresh pipeline entity is not
+   stream-attached by the install API alone; this step is required or the pipeline's rules will not
+   evaluate against any live traffic.
+5. Identify and remove any blind-duplicated streams/inputs created as a side effect of installation — the
+   same `StreamFacade`/input blind-duplication behaviour already documented in §3/§11(g.2); reconciling a
+   pipeline does not change this pre-existing installer behaviour.
+6. Verify every live rule's source matches canonical Git byte-for-byte (diff the live rule source against
+   `deploy/content-packs/falcon-pid03-ingestion-v1.json`'s generated rule, the same drift-guard discipline
+   `deploy/generate_payload_requirements_rule.py` enforces offline).
+7. Verify the intended input IDs/states afterwards — confirm no unintended input was created, removed, or
+   left in a non-`RUNNING` state.
+8. Confirm producer authentication configuration (mTLS trust, input bindings) was not disturbed by any step
+   above.
+9. Capture all timestamps in UTC; record install duration, pipeline-absent window duration, and confirm zero
+   producer-evidence misrouting to the Default stream during the window.
+
+### 14.2 What this procedure is not
+
+This is a documentation correction of the proven reconciliation procedure, not a new deployment framework
+and not an application-code change. It does not alter the content-pack installation API contract, the
+drift-guard generator (`deploy/generate_payload_requirements_rule.py`), or any registry/schema file. Use the
+existing install mechanism from §2/§11/§13 exactly; only the reconciliation sequence around it (steps 1-2
+and 4-5 above) is new.
+
+### 14.3 Evidence captured for the proven rev-6 run
+
+- HTTP 200 on install; ≈250ms installation time; ≈289ms pipeline-absent window.
+- Zero Graylog container restart; zero API outage; zero producer events misrouted to Default during the
+  window; zero HERMES evidence loss.
+- Post-correction: all 30 live rules matched canonical rev 6 byte-for-byte; all 5 dedicated inputs remained
+  `RUNNING`; rev 6 recorded 44 entities.
+- Full PID-06 runtime acceptance context: `docs/operations/FALCON-PID06-RUNTIME-ACCEPTANCE-EVIDENCE.md` §1.

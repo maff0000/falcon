@@ -9,12 +9,45 @@
 
 ## Status
 
-**OPEN.** Stage 1 (Discovery), Stage 2A (Contract Reconciliation), and Stage 2B
-(First Vertical Slice Implementation — `market_status`) are CLOSED and merged
-to both repositories' canonical `main`. PID-06 Runtime Acceptance and
-Canonical Deployment is the current, not-yet-executed delivery unit (see its
-Work Order, §Work Orders below). PID-06 does not close until runtime
-acceptance is proven and accepted by Central Architecture.
+**CLOSED GREEN.** Stage 1 (Discovery), Stage 2A (Contract Reconciliation), Stage 2B (First Vertical Slice
+Implementation — `market_status`), and Stage 3 (Runtime Acceptance and Canonical Deployment) are all CLOSED
+and merged to both repositories' canonical `main`. The original "OPEN... does not close until runtime
+acceptance is proven" line above was accurate at the time it was written and is retained in this file's Git
+history, not rewritten, per this project's own discipline against silently erasing prior state.
+
+### Acceptance record
+
+- **Accepted by:** Central Architecture, via explicit instruction to the Delivery Controller (Rogue):
+  "ROGUE — DELIVERY CONTROLLER / PID-06 — Runtime Acceptance Record and Closure" — "Central Architecture has
+  reviewed HELM's final runtime acceptance gate... **PID-06 RUNTIME ACCEPTANCE: GREEN**."
+- **Runtime evidence:** HELM performed the governed live deployment and acceptance-testing mandate ("HELM —
+  SYSOPS / FALCON PID-06 — ARES → FALCON Runtime Deployment & Acceptance") against canonical FALCON
+  `4276e5a193315ee1a450d11531f2cfd4d045c157` and canonical ARES `6c33621429db2066b7187ebacc268fe9402398be`.
+  Full evidence: `docs/operations/FALCON-PID06-RUNTIME-ACCEPTANCE-EVIDENCE.md`; corrected content-pack
+  reconciliation procedure: `docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md` §14; closure
+  record: `work-orders/WO-PID06-002-RUNTIME-ACCEPTANCE.md` §29.
+- **This status update's own authority:** a Delivery-Controller-level durable-record correction making the
+  already-given, already-evidenced Architect acceptance visible in Git, per this project's "no Git record →
+  not durable project authority" rule — becomes durable project authority only once this closure candidate
+  has itself passed independent audit, PR, and Architect acceptance.
+
+### Delivered and proven
+
+Dedicated ARES mTLS Graylog input; fresh ARES producer identity; canonical `ares-foundation` service
+(AMD-PID06-001); canonical Foundation local liveness mechanism (AMD-PID06-002); real live ARES
+`market_status` publication; the corrected ARES `market_status` contract (Stage 2A/2B); authenticated FALCON
+producer attribution; `VALID` Graylog classification and routing; lossless producer-owned payload
+preservation; a bounded searchable envelope; replay exclusion; FALCON failure isolation from ARES Foundation
+scheduling (proven empirically under a real bounded outage); automatic publication recovery; HERMES
+regression protection; the deployed 300-second queue-sizing rationale (Finding A, for that cadence only).
+
+### Explicitly not delivered by PID-06
+
+Any other ARES evidence family (Calendar, Liquidity, Macro-USD, source-quality); `publication.decision`
+redesign; a generalised queue-sizing proof across the full configurable 30–3600-second range; a
+durable-delivery/outbox mechanism; a guarantee of zero evidence loss; Finding B shutdown-hardening proof
+(remains OPEN, carried to the ARES operational/testing backlog); ARES Core canonical-image migration; or
+remediation of any other non-blocking debt item recorded in the evidence document's §10.
 
 ## Supersession notice
 
@@ -137,7 +170,7 @@ Work Order if the fix is non-trivial):
   own dedicated end-to-end integration test exercising a hung publisher
   through the real supervisor shutdown path.
 
-## Stage 3 — Runtime Acceptance and Canonical Deployment (OPEN, NOT YET EXECUTED)
+## Stage 3 — Runtime Acceptance and Canonical Deployment (CLOSED, MERGED, RUNTIME-ACCEPTED)
 
 See Work Order `WO-PID06-002-RUNTIME-ACCEPTANCE` (`work-orders/WO-PID06-002-RUNTIME-ACCEPTANCE.md`).
 Covers: FALCON host-port exposure for the ARES GELF/mTLS input (12412,
@@ -180,9 +213,9 @@ untouched throughout PID-06 to date).
 
 ## Definition of Done
 
-PID-06 is not complete until ARES's real, live `market_status` evidence is
-provably and repeatably reaching FALCON as `VALID`, with its rich
-producer-owned observation intact and its searchable fields matching the
-accepted contract exactly, and until the non-blocking failure-isolation
-guarantee has been proven against real (not merely simulated/unit-tested)
-runtime conditions — not merely coded, unit-tested, or documented.
+**MET.** ARES's real, live `market_status` evidence is provably reaching FALCON as `VALID`, with its rich
+producer-owned observation intact and its searchable fields matching the accepted contract exactly (event
+`d36f91ea-ba23-4fc4-957a-f2cb7bb32a16`), and the non-blocking failure-isolation guarantee has been proven
+against real runtime conditions (bounded outage `2026-10-06T14:49:30Z`–`14:51:45Z`, with proven recovery) —
+not merely coded, unit-tested, or documented. Full evidence:
+`docs/operations/FALCON-PID06-RUNTIME-ACCEPTANCE-EVIDENCE.md`.

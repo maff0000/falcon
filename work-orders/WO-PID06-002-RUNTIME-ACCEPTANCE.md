@@ -90,7 +90,7 @@ The smallest set of runtime/configuration changes required to prove the above:
 12. Prove ARES's existing authoritative SQL/Redis representation of that observation remains correct and unchanged by the presence of evidence publication.
 13. Prove the corresponding evidence reaches FALCON.
 14. Prove FALCON classifies/routes it as `VALID` (not `INVALID`/Quarantine).
-15. Prove the full rich producer-owned observation survives intact in FALCON's binary preservation mechanism.
+15. Prove the full rich producer-owned observation survives intact in FALCON's lossless producer-owned payload preservation mechanism.
 16. Prove the searchable envelope/payload fields match the accepted Stage 2A/2B contract exactly (`instrument_id`, `market_state` ∈ `{OPEN,CLOSED,UNKNOWN}`, optional `reason_code` only when genuinely present, no `quality_state` in the searchable payload).
 17. Prove the natural identity corresponds exactly to `instrument + observed_at_utc + config_digest`.
 18. Prove a reconstructed/replayed ARES event (`audit.reconstructed == true`) is not accidentally published during this proof.
@@ -344,3 +344,35 @@ FALCON startup dependency, canonical source, existing P0 job semantics), is reop
 This section is itself documentation/governance only. It does not dispatch FORGE or HELM, and does not
 authorise any implementation until this amended Work Order has itself passed independent audit, PR, and
 Architect acceptance, per §1's governance chain.
+
+
+## 29. Runtime acceptance closure (PID-06 RUNTIME ACCEPTANCE: GREEN)
+
+Central Architecture has reviewed HELM's live runtime deployment and acceptance evidence against this WO's
+§4-§21 requirements and ruled: **PID-06 RUNTIME ACCEPTANCE: GREEN.** The full evidence record is durable at
+`docs/operations/FALCON-PID06-RUNTIME-ACCEPTANCE-EVIDENCE.md`, with the corrected content-pack reconciliation
+procedure at `docs/operations/FALCON-PID04-PRIVILEGED-OPERATIONS-RUNBOOK.md` §14. Summary (full detail in
+that evidence document, not duplicated here):
+
+- Live `market_status` acceptance event `d36f91ea-ba23-4fc4-957a-f2cb7bb32a16` classified `VALID`, full
+  13-key rich payload intact, correct natural identity and authenticated producer attribution.
+- mTLS boundary proven both positively (fresh ARES identity accepted) and negatively (no-cert, forged-cert,
+  and wrong-producer-cert all rejected).
+- Failure-isolation test (window `2026-10-06T14:49:30Z`–`14:51:45Z`) empirically proved FALCON evidence
+  publication is not a runtime dependency of ARES Foundation scheduling — the major PID-06 acceptance
+  result.
+- HERMES 12411 regression guard: zero evidence loss attributable to this WO's work; a separate, unrelated,
+  historical 2026-10-04 incident (27 HERMES events lost during ~19.7s of FALCON downtime) is recorded as
+  FALCON resilience/maintenance debt, not a PID-06 defect.
+- Finding A: validated for the actually-deployed 300-second cadence only, not generalised.
+- Finding B: remains OPEN, non-blocking technical debt, carried to the ARES operational/testing backlog with
+  provenance back to PID-06 — not closed, not fixed here.
+- Non-blocking debt items (ARES mixed Core image, historical Compose labels, pre-existing HERMES dependency
+  identity mismatch, retained manual `ares-foundation-manual-pre-pid06` rollback container,
+  `tar-risk-engine` restart loop, FALCON evidence-loss-under-downtime semantics) are recorded, not
+  remediated, per the evidence document §10.
+
+This section, and PID-06's own status update (`pids/PID-06-ARES-INTEGRATION.md`), become durable project
+authority only once this closure candidate has itself passed independent audit, PR, and Architect
+acceptance, per §1's governance chain. No application or runtime implementation accompanies this section
+— it is documentation/evidence closure only.
