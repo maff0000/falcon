@@ -98,8 +98,22 @@ one registered typed payload.
   `sensitivity_class`        string              FALCON registry value
 
   `payload`                  object              registered typed schema
-                                                 only
+                                                 only --- the deliberately
+                                                 PROMOTED searchable subset
+                                                 for this family (see note
+                                                 below)
   --------------------------------------------------------------------------
+
+## Producer-owned raw preservation
+
+The `payload` row above is the per-family, registered, deliberately-PROMOTED searchable subset only
+(validated with `additionalProperties: false`) --- it is not the full producer-owned evidence. The complete,
+lossless producer-owned evidence is carried separately, alongside `payload`, in a dedicated raw-preservation
+field (proven in production as `ares_market_status_raw_json`, PID-06 Stage 2B) that is not subject to the
+`payload` schema's `additionalProperties: false` restriction and is not itself validated against a fixed
+schema. See `docs/architecture/04-PRODUCER-CONTRACT-EVOLUTION-DOCTRINE.md` for the full doctrine this
+realises. This is the existing, already-proven mechanism; this note documents it, it does not introduce a new
+one.
 
 ## Temporal law
 
